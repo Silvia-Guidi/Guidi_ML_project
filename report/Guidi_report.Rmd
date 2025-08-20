@@ -1,0 +1,14 @@
+---
+title: "Guidi_report"
+author: "Silvia Guidi"
+date: "2025-08-18"
+output: pdf_document
+---
+
+# Report title
+
+## Introduction
+
+## Data Exploration and Preprocessing
+
+The dataset provided comprises of 6497 observations and 12 variables. The variables already had their role specified, in fact there were 10 features, all continuous, 'quality' recognized to be the target, and lastly 'color' which was classified as 'other' and being a categorical variable. No missing values were found, so all the observations were suitable.
