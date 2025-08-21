@@ -25,7 +25,6 @@ plt.tight_layout()
 
 fig, axes = plt.subplots(3, 4, figsize=(16,10))  # 3 rows, 4 columns
 axes = axes.flatten()
-
 for i, col in enumerate(df.columns):
     axes[i].boxplot(df[col], patch_artist=True, boxprops=dict(facecolor="#2CEAA3"))
     axes[i].set_title(col)
@@ -43,8 +42,37 @@ plt.title("Correlation Heatmap", fontsize=16, pad=20)
 #plt.show()
 
 #data preprocessing
+feature_names = df.drop(columns=["quality"]).columns
 target = np.where(df["quality"] >= 6, 1, -1)
+
+classes, counts = np.unique(target, return_counts=True)
+labels = ['Bad', ' Good']
+colors = ['#FF9999', '#2CEAA3']
+plt.figure(figsize=(5,5))
+plt.pie(counts, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90,
+        wedgeprops={'edgecolor':'k'})
+plt.title("Proportion of Quality classes")
+#plt.show()
+
 features = df.drop(columns=["quality"]).to_numpy(dtype=np.float64)
 features_train, features_test, target_train, target_test = train_test_split(
     features, target, test_size=0.2, random_state= 42, stratify= target
 )
+mean_train= features_train.mean(axis=0)
+std_train = features_train.std(axis=0)
+std_train[std_train == 0] = 1
+features_train = (features_train - mean_train) / std_train
+features_test = (features_test - mean_train) / std_train
+
+n_features = features_train.shape[1]
+fig, axes = plt.subplots(1, n_features, figsize=(3*n_features, 5))
+for i in range(n_features):
+    axes[i].boxplot(features_train[:, i], patch_artist=True,
+                    boxprops=dict(facecolor="#2CEAA3"))
+    axes[i].set_title(feature_names[i], fontsize=7)
+plt.tight_layout()
+#plt.show()
+#print(np.isnan(features_train).any())
+#print(np.isnan(features_test).any())
+#print(features_train.mean(axis=0))
+#print(features_train.std(axis=0)) 
