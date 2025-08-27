@@ -11,4 +11,35 @@ output: pdf_document
 
 ## Data Exploration and Preprocessing
 
-The dataset provided comprises of 6497 observations and 12 variables. The variables already had their role specified, in fact there were 10 features, all continuous, 'quality' recognized to be the target, and lastly 'color' which was classified as 'other' and being a categorical variable. No missing values were found, so all the observations were suitable.
+The dataset provided comprises of 6497 observations and 12 numerical variables. Each variable measures a different component of wine: fixed and volatile acidity, citric acid, residual sugar, chlorides, both free and total sulfur dioxide, density, the ph, sulphates, and alcohol. All these represents the features that will be used to classify the wine, while the target variable used will be 'quality'.
+
+The distribution of the variables is overall skewed, as figure 1 depicts. Most of the observations tend to be on the lowest values of the range and around the mean, with the exception of 'total sulfur dioxide', 'ph', 'alcohol' and 'quality', which tend to be slightly more centered and spread.
+
+```{r fig-hist, fig.cap="distribution of variables represented using histograms", echo=FALSE, fig.pos='H'}
+knitr::include_graphics("histograms.png")
+```
+
+Figure 2 gives another perspective on the distributions considered. Here it is possible to see better how observations tend to be around the mean in most cases, with the exception of the four cases highlighted before. Moreover, it is evident that in all variables there are potential outliers, which explains why in figure 1 most graphs are shifted on the left and not centered. 
+
+```{r fig-box, fig.cap="distribution of variables represented using boxplots", echo=FALSE, fig.pos='H'}
+knitr::include_graphics("Boxplots.png")
+```
+
+Finally, the correlation between the variables was investigated. The heath map in figure 3 shows that most variables are mildly correlated. There are two that stand out for their high value: 0.72 for free and total sulfur dioxide and -0.69 for density and alcohol. These two results can be justified using qualitative reasoning: in the first case the variables share the same object measured - sulfur dioxide; in the second case, chemically, ethanol (the element of alcohol) has a lower density compared to the water components of the wine, thus the negative relation. Focusing on the target, all the relations are negative and not strong, with the exception of 'alcohol' which has positive sign and medium strength. From these results it is not expected to find multicollinearity between any variable, however in phase of evaluation of the regression model due controls will be performed to ensure this. 
+
+```{r fig-corr, fig.cap="representation of the correlation with a heatmap", echo=FALSE, fig.pos='H'}
+knitr::include_graphics("corr.png")
+```
+
+After this first investigation of the data as they were provided, some manipulation was performed.
+First, the target variable 'quality' had to be encoded into a binary variable, necessary both for the Support Vector Machine and the Logistic Regression model. This variable measures the quality of the wine on a scale from 0 to 10, therefore the threshold chosen to consider a wine 'good' or 'bad' was 6. Initially the two resulting classes were encoded '1' and '-1' to favor the SVM model, this has later been changed into the '0-1' code for the regression model. 
+The variable needed no further adjustments since the proportion between the two classes (see figure 4) was balanced enough. 
+```{r fig-pie, fig.cap="proprtion of the two classes of the target variable", echo=FALSE, fig.pos='H'}
+knitr::include_graphics("pie.png")
+```
+Afterwards, the training and test sets were created. The choice of the size of each set was made in accordance to the size of the data set and the common practices in machine learning to ensure train adequacy and test reliability. As result, 80% of the data were randomly chosen as training and the remaining 20% - approximately 1300 observations - as test. During this split, in addition to randomization, stratification was implemented to ensure a constant proportion in the classes of the target would be preserved in the two groups.
+Both the training and the test were standardized to have a common scale using the following formula: 
+$$
+\text{X}=\frac{X-\mu_{\text{train}}}{\sigma_{\text{train}}}
+$$
+where $\mu$ and $\sigma$ are respectively the mean and the standard deviation of the training error, chosen to avoid problems of data leakage. 
