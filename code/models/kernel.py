@@ -22,29 +22,35 @@ class KernelLogisticRegression:
         self.eta = eta
         self.alpha = None
         self.b = 0.0
-        self.X_train = None
+        self.X_train = None  # store training features
+
+    def _stable_sigmoid(self, z):
+        # Numerically stable sigmoid
+        return np.where(z >= 0,
+                        1 / (1 + np.exp(-z)),
+                        np.exp(z) / (1 + np.exp(z)))
 
     def fit(self, X, y):
         n = X.shape[0]
         self.X_train = X
-        K_train = kernel(X, X, self.gamma)  
+        K_train = kernel(X, X, self.gamma)  # kernel of training data
         self.alpha = np.zeros(n)
         self.b = 0.0
 
         for epoch in range(self.epochs):
             f = K_train @ self.alpha + self.b
-            p = 1 / (1 + np.exp(-y * f))  # sigmoid(-y*f)
+            p = self._stable_sigmoid(-y * f)  # stable sigmoid
             grad_alpha = (K_train @ (-y * p)) / n + self.lambda_reg * (K_train @ self.alpha)
             grad_b = (-y * p).mean()
             self.alpha -= self.eta * grad_alpha
             self.b -= self.eta * grad_b
-
         return self
 
     def predict(self, X):
-        K_test = kernel(X, self.X_train, self.gamma)  # kernel with raw training features
+        K_test = kernel(X, self.X_train, self.gamma)
         f = K_test @ self.alpha + self.b
         return np.where(f >= 0, 1, -1)
+
     def score(self, X, y):
         return (self.predict(X) == y).mean()
 

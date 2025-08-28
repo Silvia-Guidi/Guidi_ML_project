@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.model_selection import train_test_split
 from models.linear import LinearSVM, LogisticRegression
-from models.kernel import kernel, KernelSVM, KernelLogisticRegression
+from models.kernel import KernelSVM, KernelLogisticRegression
 from utils.evaluation import cross_val_score, cross_val_score_kernel, train_and_evaluate
 from plots.plots import plot_test_metrics, plot_confusion_matrices, plot_training_curves, plot_cv_results
 
@@ -132,7 +132,6 @@ print("Kernel Logistic Regression Test Accuracy:", acc_klr)
 
 
 # plots
-
 plot_test_metrics(svm_metrics, lr_metrics)
 plot_confusion_matrices(svm_metrics, lr_metrics)
 plot_training_curves(svm_model, lr_model)
