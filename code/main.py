@@ -97,45 +97,66 @@ best_lambda_lr, lr_results = cross_val_score(
     LogisticRegression, features_train, target_train, lambdas, k=5,
     epochs=50, batch_size=64, eta=0.1, shuffle=True, random_state=42
 )
-
 # final model train and evaluation
 svm_model, svm_metrics = train_and_evaluate(
     LinearSVM, features_train, target_train, features_test, target_test,
     best_lambda_svm, epochs=15, batch_size=64, shuffle=True, random_state=42
 )
+print(f"Linear SVM Test Accuracy: {svm_metrics['accuracy']:.4f}")
 lr_model, lr_metrics = train_and_evaluate(
     LogisticRegression, features_train, target_train, features_test, target_test,
     best_lambda_lr, epochs=50, batch_size=64, eta=0.1, shuffle=True, random_state=42
 )
+print(f"Logistic Regression Test Accuracy: {lr_metrics['accuracy']:.4f}")
 
 # Kernel SVM
-(best_lambda_ksvm, best_gamma_ksvm), kernel_svm_results = cross_val_score_kernel(
-    KernelSVM, features_train, target_train, lambdas, gammas, k=5,
-    epochs=15, eta=0.1
+(best_lambda_ksvm, best_degree_ksvm), kernel_svm_results = cross_val_score_kernel(
+    KernelSVM, features_train, target_train, 
+    lambdas, kernel_params=[2,3,4], k=5, kernel_param_name="degree",
+    epochs=15, eta=0.1, coef0=1
 )
-ksvm_model = KernelSVM(lambda_reg=best_lambda_ksvm, gamma=best_gamma_ksvm, epochs=15, eta=0.1)
-ksvm_model.fit(features_train, target_train)
-y_pred_ksvm = ksvm_model.predict(features_test)
-acc_ksvm = (y_pred_ksvm == target_test).mean()
-print("Kernel SVM Test Accuracy:", acc_ksvm)
 
 # Kernel Logistic Regression
 (best_lambda_klr, best_gamma_klr), kernel_lr_results = cross_val_score_kernel(
     KernelLogisticRegression, features_train, target_train, lambdas, gammas, k=5,
     epochs=50, eta=0.1
 )
-klr_model = KernelLogisticRegression(lambda_reg=best_lambda_klr, gamma=best_gamma_klr, epochs=50, eta=0.1)
-klr_model.fit(features_train, target_train)
-y_pred_klr = klr_model.predict(features_test)
-acc_klr = (y_pred_klr == target_test).mean()
-print("Kernel Logistic Regression Test Accuracy:", acc_klr)
 
+# final model train and evaluation
+ksvm_model, ksvm_metrics = train_and_evaluate(
+    KernelSVM, features_train, target_train, features_test, target_test,
+    best_lambda_ksvm, degree=best_degree_ksvm, epochs=15, eta=0.1, coef0=1
+)
+print(f"Kernel SVM Test Accuracy: {ksvm_metrics['accuracy']:.4f}")
+klr_model, klr_metrics = train_and_evaluate(
+    KernelLogisticRegression, features_train, target_train, features_test, target_test,
+    best_lambda_klr, gamma=best_gamma_klr, epochs=50, eta=0.1
+)
+print(f"Kernel Logistic Regression Test Accuracy: {klr_metrics['accuracy']:.4f}")
+
+# misclassification analysis
+def misclass(model, X_test, y_test, feature_names, max_examples=5):
+    y_pred = model.predict(X_test)
+    mis_idx = np.where(y_pred != y_test)[0]
+
+    print(f"Total misclassified examples: {len(mis_idx)}")
+    print(f"Showing up to {max_examples} examples:\n")
+
+    for i in mis_idx[:max_examples]:
+        print(f"Index: {i}, True: {y_test[i]}, Pred: {y_pred[i]}")
+        features_str = ", ".join([f"{name}={X_test[i, j]:.2f}" for j, name in enumerate(feature_names)])
+        print(f"  Features: {features_str}\n")
+misclass(svm_model, features_test, target_test, feature_names)
+misclass(lr_model, features_test, target_test, feature_names)
+misclass(ksvm_model, features_test, target_test, feature_names)
+misclass(klr_model, features_test, target_test, feature_names)
 
 # plots
-plot_test_metrics(svm_metrics, lr_metrics)
+plot_test_metrics(svm_metrics, lr_metrics, ksvm_metrics, klr_metrics)
 plot_confusion_matrices(svm_metrics, lr_metrics)
+plot_confusion_matrices(ksvm_metrics, klr_metrics, class_labels=[1, -1])
 plot_training_curves(svm_model, lr_model)
 plot_cv_results(svm_results, model_name="Linear SVM", param_type="linear")
-plot_cv_results(lr_results, model_name="Logistic Regression", param_type="linear")
+plot_cv_results(lr_results, model_name="Linear Logistic Regression", param_type="linear")
 plot_cv_results(kernel_svm_results, model_name="Kernel SVM", param_type="kernel")
 plot_cv_results(kernel_lr_results, model_name="Kernel Logistic Regression", param_type="kernel")
