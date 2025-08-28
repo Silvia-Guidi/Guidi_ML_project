@@ -57,7 +57,6 @@ plt.pie(counts, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90,
         wedgeprops={'edgecolor':'k'})
 plt.title("Proportion of Quality classes")
 #plt.show()
-
 features = df.drop(columns=["quality"]).to_numpy(dtype=np.float64)
 features_train, features_test, target_train, target_test = train_test_split(
     features, target, test_size=0.2, random_state= 42, stratify= target
