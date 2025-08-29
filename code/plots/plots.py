@@ -18,8 +18,16 @@ def plot_metrics(models_metrics):
         axes = [axes]
     for i, model in enumerate(model_names):
         ax = axes[i]
-        ax.bar(x - width/2, train_values[i], width, label="Train", alpha=0.7)
-        ax.bar(x + width/2, test_values[i], width, label="Test", alpha=0.7)
+        bars_train = ax.bar(x - width/2, train_values[i], width, label="Train", alpha=0.7, color="#7ae582")
+        bars_test = ax.bar(x + width/2, test_values[i], width, label="Test", alpha=0.7, color="#00a5cf")
+        
+        for bar in bars_train:
+            height = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width()/2, height + 0.02, f"{height:.2f}", ha='center', va='bottom')
+        for bar in bars_test:
+            height = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width()/2, height + 0.02, f"{height:.2f}", ha='center', va='bottom')
+
 
         ax.set_ylabel("Score")
         ax.set_title(f"{model} - Train vs Test Metrics")
@@ -35,24 +43,21 @@ def plot_metrics(models_metrics):
 def plot_confusion_matrices(models_metrics, class_labels=[1, -1]):
     num_models = len(models_metrics)
     fig, axes = plt.subplots(num_models, 2, figsize=(10, 4 * num_models))
-
     if num_models == 1:
         axes = np.array([axes])  # ensure consistency for single model
 
     for i, (model_name, (train_metrics, test_metrics)) in enumerate(models_metrics.items()):
-        # Training confusion matrix
-        sns.heatmap(train_metrics["confusion_matrix"], annot=True, fmt="d", cmap="Blues", cbar=False,
-                    xticklabels=class_labels, yticklabels=class_labels, ax=axes[i, 0])
-        axes[i, 0].set_title(f"{model_name} - Train")
-        axes[i, 0].set_xlabel("Predicted")
-        axes[i, 0].set_ylabel("Actual")
+        for j, cm in enumerate([train_metrics["confusion_matrix"], test_metrics["confusion_matrix"]]):
+            # Convert counts to percentages per true class (row)
+            cm_percent = cm.astype(np.float64)
+            cm_percent = cm_percent / cm_percent.sum(axis=1, keepdims=True) * 100
 
-        # Test confusion matrix
-        sns.heatmap(test_metrics["confusion_matrix"], annot=True, fmt="d", cmap="Blues", cbar=False,
-                    xticklabels=class_labels, yticklabels=class_labels, ax=axes[i, 1])
-        axes[i, 1].set_title(f"{model_name} - Test")
-        axes[i, 1].set_xlabel("Predicted")
-        axes[i, 1].set_ylabel("Actual")
+            ax = axes[i, j]
+            sns.heatmap(cm_percent, annot=True, fmt=".1f", cmap="Blues", cbar=False,
+                        xticklabels=class_labels, yticklabels=class_labels, ax=ax)
+            ax.set_xlabel("Predicted")
+            ax.set_ylabel("Actual")
+            ax.set_title(f"{model_name} - {'Train' if j==0 else 'Test'} (%)")
 
     plt.tight_layout()
     plt.show()
