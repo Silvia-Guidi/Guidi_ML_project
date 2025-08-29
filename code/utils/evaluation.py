@@ -41,22 +41,26 @@ def train_and_evaluate(model_class, X_train, y_train, X_test, y_test, best_lambd
     model = model_class(lambda_reg=best_lambda, **model_params)
     model.fit(X_train, y_train)
 
-    y_pred = model.predict(X_test)
+    # Predictions
+    y_pred_test = model.predict(X_test)
+    y_pred_train = model.predict(X_train)
 
-    # Metrics
-    acc = (y_pred == y_test).mean()
-    prec = precision_score(y_test, y_pred, pos_label=1)
-    rec = recall_score(y_test, y_pred, pos_label=1)
-    f1 = f1_score(y_test, y_pred, pos_label=1)
-
-    # Confusion matrix
-    cm = confusion_matrix(y_test, y_pred, labels=[1, -1])
-    metrics = {
-        "accuracy": acc,
-        "precision": prec,
-        "recall": rec,
-        "f1": f1,
-        "confusion_matrix": cm
+    # Metrics on test set
+    test_metrics = {
+        "accuracy": (y_pred_test == y_test).mean(),
+        "precision": precision_score(y_test, y_pred_test, pos_label=1),
+        "recall": recall_score(y_test, y_pred_test, pos_label=1),
+        "f1": f1_score(y_test, y_pred_test, pos_label=1),
+        "confusion_matrix": confusion_matrix(y_test, y_pred_test, labels=[1, -1])
     }
 
-    return model, metrics
+    # Metrics on train set
+    train_metrics = {
+        "accuracy": (y_pred_train == y_train).mean(),
+        "precision": precision_score(y_train, y_pred_train, pos_label=1),
+        "recall": recall_score(y_train, y_pred_train, pos_label=1),
+        "f1": f1_score(y_train, y_pred_train, pos_label=1),
+        "confusion_matrix": confusion_matrix(y_train, y_pred_train, labels=[1, -1])
+    }
+
+    return  model, train_metrics, test_metrics

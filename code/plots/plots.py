@@ -1,63 +1,58 @@
 import matplotlib.pyplot as plt
+import seaborn as sns
 import numpy as np
 
 # Metrics 
-def plot_test_metrics(svm_metrics, lr_metrics, ksvm_metrics=None, klr_metrics=None):
+def plot_metrics(models_metrics):
     metric_names = ["accuracy", "precision", "recall", "f1"]
-    
-    # Build a dictionary of metrics
-    metrics_dict = {
-        "Linear SVM": svm_metrics,
-        "Logistic Regression": lr_metrics
-    }
-    if ksvm_metrics is not None:
-        metrics_dict["Kernel SVM"] = ksvm_metrics
-    if klr_metrics is not None:
-        metrics_dict["Kernel Logistic Regression"] = klr_metrics
+    model_names = list(models_metrics.keys())
 
-    model_names = list(metrics_dict.keys())
-    
-    # Extract metric values for each model
-    values = np.array([[metrics_dict[model][m] for m in metric_names] for model in model_names])
+    # Collect metrics into arrays
+    train_values = np.array([[models_metrics[m][0][metric] for metric in metric_names] for m in model_names])
+    test_values = np.array([[models_metrics[m][1][metric] for metric in metric_names] for m in model_names])
+
     x = np.arange(len(metric_names))  
-    width = 0.15  
-
-    fig, ax = plt.subplots(figsize=(10, 6))
-    # Plot one bar group per model
+    width = 0.35  
+    fig, axes = plt.subplots(len(model_names), 1, figsize=(10, 5 * len(model_names)))
+    if len(model_names) == 1:
+        axes = [axes]
     for i, model in enumerate(model_names):
-        ax.bar(x + i*width - (len(model_names)-1)*width/2, values[i], width, label=model)
+        ax = axes[i]
+        ax.bar(x - width/2, train_values[i], width, label="Train", alpha=0.7)
+        ax.bar(x + width/2, test_values[i], width, label="Test", alpha=0.7)
 
-    ax.set_ylabel("Score")
-    ax.set_title("Final Test Metrics Comparison")
-    ax.set_xticks(x)
-    ax.set_xticklabels([m.capitalize() for m in metric_names])
-    ax.legend()
-    ax.set_ylim(0, 1.05)
+        ax.set_ylabel("Score")
+        ax.set_title(f"{model} - Train vs Test Metrics")
+        ax.set_xticks(x)
+        ax.set_xticklabels([m.capitalize() for m in metric_names])
+        ax.legend()
+        ax.set_ylim(0, 1.05)
+
     plt.tight_layout()
     plt.show()
 
 # confusion matrices
-def plot_confusion_matrices(svm_metrics, lr_metrics, class_labels=[1, -1], cmap="coolwarm"):
-    cm_svm = svm_metrics["confusion_matrix"]
-    cm_lr = lr_metrics["confusion_matrix"]
+def plot_confusion_matrices(models_metrics, class_labels=[1, -1]):
+    num_models = len(models_metrics)
+    fig, axes = plt.subplots(num_models, 2, figsize=(10, 4 * num_models))
 
-    fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+    if num_models == 1:
+        axes = np.array([axes])  # ensure consistency for single model
 
-    for ax, cm, title in zip(axes, [cm_svm, cm_lr], ["SVM", "Logistic Regression"]):
-        im = ax.imshow(cm, interpolation="nearest", cmap=cmap)  # use the chosen colormap
-        ax.set_title(title)
-        ax.set_xticks(np.arange(len(class_labels)))
-        ax.set_yticks(np.arange(len(class_labels)))
-        ax.set_xticklabels(class_labels)
-        ax.set_yticklabels(class_labels)
-        ax.set_ylabel("True label")
-        ax.set_xlabel("Predicted label")
+    for i, (model_name, (train_metrics, test_metrics)) in enumerate(models_metrics.items()):
+        # Training confusion matrix
+        sns.heatmap(train_metrics["confusion_matrix"], annot=True, fmt="d", cmap="Blues", cbar=False,
+                    xticklabels=class_labels, yticklabels=class_labels, ax=axes[i, 0])
+        axes[i, 0].set_title(f"{model_name} - Train")
+        axes[i, 0].set_xlabel("Predicted")
+        axes[i, 0].set_ylabel("Actual")
 
-        # Show values inside cells
-        for i in range(cm.shape[0]):
-            for j in range(cm.shape[1]):
-                text_color = "white" if cm[i, j] > cm.max() / 2. else "black"
-                ax.text(j, i, format(cm[i, j], "d"), ha="center", va="center", color=text_color)
+        # Test confusion matrix
+        sns.heatmap(test_metrics["confusion_matrix"], annot=True, fmt="d", cmap="Blues", cbar=False,
+                    xticklabels=class_labels, yticklabels=class_labels, ax=axes[i, 1])
+        axes[i, 1].set_title(f"{model_name} - Test")
+        axes[i, 1].set_xlabel("Predicted")
+        axes[i, 1].set_ylabel("Actual")
 
     plt.tight_layout()
     plt.show()
