@@ -85,7 +85,6 @@ print(features_train.std(axis=0))
 num_points = 6
 lambdas = np.logspace(-4, 0, num=num_points)
 gammas  = np.logspace(-3, 1, num=num_points)
-etas = [0.001, 0.005, 0.01, 0.1]
 
 # Linear SVM 
 best_lambda_svm, svm_results = cross_val_score(
@@ -110,30 +109,30 @@ lr_model, lr_train_metrics, lr_test_metrics = train_and_evaluate(
 print(f"Linear Logistic Regression Test Accuracy: {lr_test_metrics['accuracy']:.4f}")
 
 # Kernel SVM
-(best_lambda_ksvm, best_gamma_ksvm, best_eta_ksvm), kernel_svm_results = cross_val_score_kernel(
-    KernelSVM, features_train, target_train, etas=etas,
+(best_lambda_ksvm, best_gamma_ksvm), kernel_svm_results = cross_val_score_kernel(
+    KernelSVM, features_train, target_train, etas=0.1,
     lambdas=lambdas, gammas=gammas, k=5,
     epochs=15
 )
-print(f"Best parameters Kernel SVM: lambda={best_lambda_ksvm}, gamma={best_gamma_ksvm}, eta={best_eta_ksvm}")
+print(f"Best parameters Kernel SVM: lambda={best_lambda_ksvm}, gamma={best_gamma_ksvm}")
 # Kernel Logistic Regression
-(best_lambda_klr, best_gamma_klr, best_eta_klr), kernel_lr_results = cross_val_score_kernel(
-    KernelLogisticRegression, features_train, target_train, etas=etas,
+(best_lambda_klr, best_gamma_klr), kernel_lr_results = cross_val_score_kernel(
+    KernelLogisticRegression, features_train, target_train, eta=0.1,
     lambdas=lambdas, gammas=gammas, k=5,
     epochs=50
 )
-print(f"Best parameters Kernel LR: lambda={best_lambda_ksvm}, gamma={best_gamma_ksvm}, eta={best_eta_ksvm}")
+print(f"Best parameters Kernel LR: lambda={best_lambda_ksvm}, gamma={best_gamma_ksvm}")
 
 # final model train and evaluation
 ksvm_model, ksvm_train_metrics, ksvm_test_metrics = train_and_evaluate(
     KernelSVM, features_train, target_train, features_test, target_test,
-    best_lambda_ksvm, gamma=best_gamma_ksvm, eta=best_eta_ksvm, epochs=15
+    best_lambda_ksvm, gamma=best_gamma_ksvm, eta=0.1, epochs=15
 )
 print(f"Kernel SVM Test Accuracy: {ksvm_test_metrics['accuracy']:.4f}")
 
 klr_model, klr_train_metrics, klr_test_metrics = train_and_evaluate(
     KernelLogisticRegression, features_train, target_train, features_test, target_test,
-    best_lambda_klr, gamma=best_gamma_klr, eta=best_eta_klr, epochs=50
+    best_lambda_klr, gamma=best_gamma_klr, eta=0.1, epochs=50
 )
 print(f"Kernel Logistic Regression Test Accuracy: {klr_test_metrics['accuracy']:.4f}")
 
