@@ -72,7 +72,21 @@ def plot_training_curves(svm_model, lr_model):
     
     plt.xlabel("Epoch")
     plt.ylabel("Objective / Loss")
-    plt.title("Training Convergence")
+    plt.title("Training Convergence linear models")
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+def plot_ktraining_curves(ksvm_model, klr_model):
+    plt.figure(figsize=(10,4))
+    # SVM
+    plt.plot(ksvm_model.history_["hinge_loss"], label="SVM (hinge loss)")
+    # LR
+    plt.plot(klr_model.history_["log_loss"], label="LR (log loss)")
+    
+    plt.xlabel("Epoch")
+    plt.ylabel("Objective / Loss")
+    plt.title("Training Convergence kernel models")
     plt.legend()
     plt.tight_layout()
     plt.show()
@@ -95,18 +109,29 @@ def plot_cv_results(results, model_name="Model", param_type="linear"):
         lambdas = sorted(set(lam for lam, _ in results.keys()))
         gammas  = sorted(set(gam for _, gam in results.keys()))
         mean_matrix = np.zeros((len(lambdas), len(gammas)))
+        std_matrix  = np.zeros((len(lambdas), len(gammas)))
         for i, lam in enumerate(lambdas):
             for j, gam in enumerate(gammas):
                 mean_matrix[i, j] = results[(lam, gam)][0]
-        plt.figure(figsize=(7, 5))
-        im = plt.imshow(mean_matrix, origin="lower", 
+                std_matrix[i, j]  = results[(lam, gam)][1]
+        # Plot mean CV accuracy heatmap
+        plt.figure(figsize=(8,6))
+        im = plt.imshow(mean_matrix, origin="lower",
                         extent=(min(gammas), max(gammas), min(lambdas), max(lambdas)),
                         aspect="auto", cmap="viridis")
-        plt.colorbar(im, label="Mean CV Accuracy")
         plt.xscale("log")
         plt.yscale("log")
         plt.xlabel("Gamma (log scale)")
         plt.ylabel("Lambda (log scale)")
-        plt.title(f"{model_name} Kernelized Cross-Validation")
+        plt.title(f"{model_name} Kernelized Cross-Validation (Mean Accuracy)")
+        plt.colorbar(im, label="Mean CV Accuracy")
+
+        # Highlight best hyperparameters
+        best_idx = np.unravel_index(np.argmax(mean_matrix), mean_matrix.shape)
+        best_lam = lambdas[best_idx[0]]
+        best_gam = gammas[best_idx[1]]
+        plt.scatter(best_gam, best_lam, color="white", marker="*", s=200, edgecolors="k", label="Best")
+
+        plt.legend()
         plt.tight_layout()
         plt.show()

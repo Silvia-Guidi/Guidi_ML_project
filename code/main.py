@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 from models.linear import LinearSVM, LogisticRegression
 from models.kernel import KernelSVM, KernelLogisticRegression
 from utils.evaluation import cross_val_score, cross_val_score_kernel, train_and_evaluate
-from plots.plots import plot_metrics, plot_confusion_matrices, plot_training_curves, plot_cv_results
+from plots.plots import plot_metrics, plot_confusion_matrices, plot_training_curves,plot_ktraining_curves, plot_cv_results
 
 from ucimlrepo import fetch_ucirepo
 wine_quality = fetch_ucirepo(id=186)
@@ -47,16 +47,6 @@ plt.title("Correlation Heatmap", fontsize=16, pad=20)
 
 #data preprocessing
 
-## adjust skewness and cap outliers
-#feature_columns = df.drop(columns=["quality"]).columns
-#for col in feature_columns:
-    #lower = df[col].quantile(0.01)
-    #upper = df[col].quantile(0.99)
-    #df[col] = df[col].clip(lower=lower, upper=upper)
-#skewed_features = ["residual_sugar", "free_sulfur_dioxide", "total_sulfur_dioxide", "chlorides"]
-#for col in skewed_features:
-    #df[col] = np.log1p(df[col]) 
-
 feature_names = df.drop(columns=["quality"]).columns
 target = np.where(df["quality"] >= 6, 1, -1)
 
@@ -95,18 +85,20 @@ print(features_train.std(axis=0))
 num_points = 6
 lambdas = np.logspace(-4, 0, num=num_points)
 gammas  = np.logspace(-3, 1, num=num_points)
+etas = [0.001, 0.005, 0.01, 0.1]
 
 # Linear SVM 
 best_lambda_svm, svm_results = cross_val_score(
     LinearSVM, features_train, target_train, lambdas, k=5,
     epochs=15, batch_size=64, shuffle=True, random_state=42
 )
-
+print(f"Best lambda Linear SVM: lambda={best_lambda_svm}")
 # Linear Logistic Regression
 best_lambda_lr, lr_results = cross_val_score(
     LogisticRegression, features_train, target_train, lambdas, k=5,
     epochs=50, batch_size=64, eta=0.1, shuffle=True, random_state=42
 )
+print(f"Best lambda Linear LR: lambda={best_lambda_lr}")
 # final model train and evaluation
 svm_model, svm_train_metrics, svm_test_metrics = train_and_evaluate(
     LinearSVM, features_train, target_train, features_test, target_test, best_lambda_svm
@@ -118,28 +110,30 @@ lr_model, lr_train_metrics, lr_test_metrics = train_and_evaluate(
 print(f"Linear Logistic Regression Test Accuracy: {lr_test_metrics['accuracy']:.4f}")
 
 # Kernel SVM
-(best_lambda_ksvm, best_gamma_ksvm), kernel_svm_results = cross_val_score_kernel(
-    KernelSVM, features_train, target_train,
-    lambdas, gammas=gammas, k=5,
-    epochs=15, eta=0.1
+(best_lambda_ksvm, best_gamma_ksvm, best_eta_ksvm), kernel_svm_results = cross_val_score_kernel(
+    KernelSVM, features_train, target_train, etas=etas,
+    lambdas=lambdas, gammas=gammas, k=5,
+    epochs=15
 )
+print(f"Best parameters Kernel SVM: lambda={best_lambda_ksvm}, gamma={best_gamma_ksvm}, eta={best_eta_ksvm}")
 # Kernel Logistic Regression
-(best_lambda_klr, best_gamma_klr), kernel_lr_results = cross_val_score_kernel(
-    KernelLogisticRegression, features_train, target_train,
-    lambdas, gammas=gammas, k=5,
-    epochs=50, eta=0.1, batch_size=32
+(best_lambda_klr, best_gamma_klr, best_eta_klr), kernel_lr_results = cross_val_score_kernel(
+    KernelLogisticRegression, features_train, target_train, etas=etas,
+    lambdas=lambdas, gammas=gammas, k=5,
+    epochs=50
 )
+print(f"Best parameters Kernel LR: lambda={best_lambda_ksvm}, gamma={best_gamma_ksvm}, eta={best_eta_ksvm}")
 
 # final model train and evaluation
 ksvm_model, ksvm_train_metrics, ksvm_test_metrics = train_and_evaluate(
     KernelSVM, features_train, target_train, features_test, target_test,
-    best_lambda_ksvm, gamma=best_gamma_ksvm, epochs=15, eta=0.1
+    best_lambda_ksvm, gamma=best_gamma_ksvm, eta=best_eta_ksvm, epochs=15
 )
 print(f"Kernel SVM Test Accuracy: {ksvm_test_metrics['accuracy']:.4f}")
 
 klr_model, klr_train_metrics, klr_test_metrics = train_and_evaluate(
     KernelLogisticRegression, features_train, target_train, features_test, target_test,
-    best_lambda_klr, gamma=best_gamma_klr, epochs=50, eta=0.1
+    best_lambda_klr, gamma=best_gamma_klr, eta=best_eta_klr, epochs=50
 )
 print(f"Kernel Logistic Regression Test Accuracy: {klr_test_metrics['accuracy']:.4f}")
 
@@ -155,10 +149,10 @@ def misclass(model, X_test, y_test, feature_names, max_examples=5):
         print(f"Index: {i}, True: {y_test[i]}, Pred: {y_pred[i]}")
         features_str = ", ".join([f"{name}={X_test[i, j]:.2f}" for j, name in enumerate(feature_names)])
         print(f"  Features: {features_str}\n")
-misclass(svm_model, features_test, target_test, feature_names)
-misclass(lr_model, features_test, target_test, feature_names)
-misclass(ksvm_model, features_test, target_test, feature_names)
-misclass(klr_model, features_test, target_test, feature_names)
+#misclass(svm_model, features_test, target_test, feature_names)
+#misclass(lr_model, features_test, target_test, feature_names)
+#misclass(ksvm_model, features_test, target_test, feature_names)
+#misclass(klr_model, features_test, target_test, feature_names)
 
 # plots
 models_metrics = {
@@ -170,6 +164,7 @@ models_metrics = {
 plot_metrics(models_metrics)
 plot_confusion_matrices(models_metrics, class_labels=[1, -1])
 plot_training_curves(svm_model, lr_model)
+plot_ktraining_curves(ksvm_model, klr_model)
 plot_cv_results(svm_results, model_name="Linear SVM", param_type="linear")
 plot_cv_results(lr_results, model_name="Linear Logistic Regression", param_type="linear")
 plot_cv_results(kernel_svm_results, model_name="Kernel SVM", param_type="kernel")

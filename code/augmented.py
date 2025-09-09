@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split
 from models.linear import LinearSVM, LogisticRegression
 from models.kernel import KernelSVM, KernelLogisticRegression
 from utils.evaluation import cross_val_score, cross_val_score_kernel, train_and_evaluate
-from plots.plots import plot_metrics, plot_confusion_matrices, plot_cv_results
+from plots.plots import plot_metrics, plot_confusion_matrices, plot_training_curves,plot_ktraining_curves, plot_cv_results
 
 from ucimlrepo import fetch_ucirepo
 wine_quality = fetch_ucirepo(id=186)
@@ -61,18 +61,20 @@ features_test = (features_test - mean_train) / std_train  # use train mean/std
 num_points = 6
 lambdas = np.logspace(-4, 0, num=num_points)
 gammas  = np.logspace(-3, 1, num=num_points)
+etas = [0.001, 0.005, 0.01, 0.1]
 
 # Linear SVM 
 best_lambda_svm, svm_results = cross_val_score(
     LinearSVM, features_train, target_train, lambdas, k=5,
-    epochs=15, batch_size=64, shuffle=True, random_state=42
+    epochs=15, shuffle=True, random_state=42
 )
-
+print(f"Best lambda Linear augmented SVM: lambda={best_lambda_svm}")
 # Linear Logistic Regressions
 best_lambda_lr, lr_results = cross_val_score(
     LogisticRegression, features_train, target_train, lambdas, k=5,
-    epochs=50, batch_size=64, eta=0.1, shuffle=True, random_state=42
+    epochs=50, eta=0.1, shuffle=True, random_state=42
 )
+print(f"Best lambda Linear augmented LR: lambda={best_lambda_lr}")
 # final model train and evaluation
 svm_model, svm_train_metrics, svm_test_metrics = train_and_evaluate(
     LinearSVM, features_train_aug, target_train_aug, features_test, target_test, best_lambda_svm
@@ -85,28 +87,29 @@ print(f"Linear Logistic Regression Test Accuracy after augmentation: {lr_test_me
 
 
 # Kernel SVM
-(best_lambda_ksvm_aug, best_gamma_ksvm_aug), kernel_svm_results_aug = cross_val_score_kernel(
+(best_lambda_ksvm_aug, best_gamma_ksvm_aug, best_eta_ksvm_aug), kernel_svm_results_aug = cross_val_score_kernel(
     KernelSVM, features_train_aug, target_train_aug,
-    lambdas, gammas=gammas, k=5,
-    epochs=15, eta=0.1, batch_size=32
+    etas=etas, lambdas=lambdas, gammas=gammas, k=5,
+    epochs=15
 )
-
+print(f"Best parameters Kernel SVM augmented: lambda={best_lambda_ksvm_aug}, gamma={best_gamma_ksvm_aug}, eta={best_eta_ksvm_aug}")
 # Kernel Logistic Regression
-(best_lambda_klr_aug, best_gamma_klr_aug), kernel_lr_results_aug = cross_val_score_kernel(
+(best_lambda_klr_aug, best_gamma_klr_aug, best_eta_klr_aug), kernel_lr_results_aug = cross_val_score_kernel(
     KernelLogisticRegression, features_train_aug, target_train_aug,
-    lambdas, gammas=gammas, k=5,
-    epochs=50, eta=0.1)
-
+    etas=etas, lambdas=lambdas, gammas=gammas, k=5,
+    epochs=15
+)
+print(f"Best parameters Kernel LR augmented: lambda={best_lambda_klr_aug}, gamma={best_gamma_klr_aug}, eta={best_eta_klr_aug}")
 # final model train and evaluation
 ksvm_model_aug, ksvm_train_metrics_aug, ksvm_test_metrics_aug = train_and_evaluate(
     KernelSVM, features_train_aug, target_train_aug, features_test, target_test,
-    best_lambda_ksvm_aug, gamma=best_gamma_ksvm_aug, epochs=15, eta=0.1, batch_size=32
+    best_lambda_ksvm_aug, gamma=best_gamma_ksvm_aug, epochs=15, eta=best_eta_ksvm_aug
 )
 print(f"Kernel SVM Test Accuracy after augmentation: {ksvm_test_metrics_aug['accuracy']:.4f}")
 
 klr_model_aug, klr_train_metrics_aug, klr_test_metrics_aug = train_and_evaluate(
     KernelLogisticRegression, features_train_aug, target_train_aug, features_test, target_test,
-    best_lambda_klr_aug, gamma=best_gamma_klr_aug, epochs=50, eta=0.1
+    best_lambda_klr_aug, gamma=best_gamma_klr_aug, epochs=50, eta=best_eta_klr_aug
 )
 print(f"Kernel Logistic Regression Test Accuracy after augmentation: {klr_test_metrics_aug['accuracy']:.4f}")
 #plot
@@ -118,5 +121,9 @@ models_metrics = {
 }
 plot_metrics(models_metrics)
 plot_confusion_matrices(models_metrics, class_labels=[1, -1])
-plot_cv_results(kernel_svm_results, model_name="Kernel SVM", param_type="kernel")
-plot_cv_results(kernel_lr_results, model_name="Kernel Logistic Regression", param_type="kernel")
+plot_training_curves(svm_model, lr_model)
+plot_ktraining_curves(ksvm_model_aug, klr_model_aug)
+plot_cv_results(svm_results, model_name="Linear SVM", param_type="linear")
+plot_cv_results(lr_results, model_name="Linear Logistic Regression", param_type="linear")
+plot_cv_results(kernel_svm_results_aug, model_name="Kernel SVM", param_type="kernel")
+plot_cv_results(kernel_lr_results_aug, model_name="Kernel Logistic Regression", param_type="kernel")

@@ -10,7 +10,7 @@ def kernel(X, Y, gamma=0.1):
      return np.exp(-gamma * sq_dists)
 
 class KernelLogisticRegression:
-    def __init__(self, lambda_reg=0.1, gamma=0.1, epochs=100, eta=0.01, batch_size=None):
+    def __init__(self, lambda_reg=0.1, gamma=0.1, epochs=50, eta=0.1, batch_size=None):
         self.lambda_reg = float(lambda_reg)
         self.gamma = float(gamma)
         self.epochs = int(epochs)
@@ -19,9 +19,9 @@ class KernelLogisticRegression:
         self.alpha = None
         self.b = 0.0
         self.X_train = None
+        self.history_ = {"log_loss": []}
 
     def _stable_sigmoid(self, z):
-        # Clip to prevent overflow
         z = np.clip(z, -500, 500)
         return 1 / (1 + np.exp(-z))
 
@@ -31,34 +31,36 @@ class KernelLogisticRegression:
         n = X.shape[0]
         self.X_train = X.copy()
         y01 = (y + 1) / 2  # Map {-1,1} -> {0,1}
-        # Kernel with tiny jitter for stability
-        K_train = kernel(X, X, self.gamma) + 1e-12 * np.eye(n, dtype=np.float64)
+        K_train = kernel(X, X, self.gamma) + 1e-12 * np.eye(n)
         self.alpha = np.zeros(n, dtype=np.float64)
         self.b = 0.0
-        batch_size = self.batch_size or n  # full-batch if None
+        self.history_ = {"log_loss": []}
 
-        for epoch in range(self.epochs):
+        for epoch in range(1, self.epochs + 1):
             f = K_train @ self.alpha + self.b
             p = self._stable_sigmoid(f)
-            grad_alpha = (K_train @ (p - y01)) / n
-            grad_alpha += self.lambda_reg * (K_train @ self.alpha)
+            # gradient
+            grad_alpha = (K_train @ (p - y01)) / n + self.lambda_reg * (K_train @ self.alpha) / n
             grad_b = (p - y01).mean()
+            # update
             self.alpha -= self.eta * grad_alpha
             self.b -= self.eta * grad_b
+            # track log loss
+            loss = -np.mean(y01 * np.log(p + 1e-12) + (1 - y01) * np.log(1 - p + 1e-12))
+            loss += 0.5 * self.lambda_reg * (self.alpha @ K_train @ self.alpha)
+            self.history_["log_loss"].append(float(loss))
+
         return self
 
     def decision_function(self, X):
-        X = X.astype(np.float64)
         K_test = kernel(X, self.X_train, self.gamma)
-        f = K_test @ self.alpha + self.b
-        return np.clip(f, -1e6, 1e6)  # numerical safety
+        return K_test @ self.alpha + self.b
 
     def predict(self, X):
         f = self.decision_function(X)
         return np.where(f >= 0, 1, -1)
 
     def score(self, X, y):
-        y = y.astype(np.float64)
         return np.mean(self.predict(X) == y)
 
 
