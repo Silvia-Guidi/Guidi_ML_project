@@ -88,26 +88,26 @@ print(f"Linear Logistic Regression Test Accuracy after augmentation: {lr_test_me
 # Kernel SVM
 (best_lambda_ksvm_aug, best_gamma_ksvm_aug), kernel_svm_results_aug = cross_val_score_kernel(
     KernelSVM, features_train_aug, target_train_aug, lambdas=lambdas, gammas=gammas, k=5,
-    epochs=100
+    epochs=200, batch_size=150
 )
 print(f"Best parameters Kernel SVM augmented: lambda={best_lambda_ksvm_aug}, gamma={best_gamma_ksvm_aug}")
 # Kernel Logistic Regression
-(best_lambda_klr_aug, best_gamma_klr_aug, best_eta_klr_aug), kernel_lr_results_aug = cross_val_score_kernel(
+(best_lambda_klr_aug, best_gamma_klr_aug), kernel_lr_results_aug = cross_val_score_kernel(
     KernelLogisticRegression, features_train_aug, target_train_aug,
     eta=0.1, lambdas=lambdas, gammas=gammas, k=5,
-    epochs=15
+    epochs=15, batch_size=150
 )
 print(f"Best parameters Kernel LR augmented: lambda={best_lambda_klr_aug}, gamma={best_gamma_klr_aug}")
 # final model train and evaluation
 ksvm_model_aug, ksvm_train_metrics_aug, ksvm_test_metrics_aug = train_and_evaluate(
     KernelSVM, features_train_aug, target_train_aug, features_test, target_test,
-    best_lambda_ksvm_aug, gamma=best_gamma_ksvm_aug, epochs=100
+    best_lambda_ksvm_aug, gamma=best_gamma_ksvm_aug, epochs=200, batch_size=150
 )
 print(f"Kernel SVM Test Accuracy after augmentation: {ksvm_test_metrics_aug['accuracy']:.4f}")
 
 klr_model_aug, klr_train_metrics_aug, klr_test_metrics_aug = train_and_evaluate(
     KernelLogisticRegression, features_train_aug, target_train_aug, features_test, target_test,
-    best_lambda_klr_aug, gamma=best_gamma_klr_aug, epochs=50, eta=0.1
+    best_lambda_klr_aug, gamma=best_gamma_klr_aug, epochs=200, eta=0.1, batch_size=150
 )
 print(f"Kernel Logistic Regression Test Accuracy after augmentation: {klr_test_metrics_aug['accuracy']:.4f}")
 #plot

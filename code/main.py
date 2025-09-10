@@ -121,7 +121,7 @@ print(f"Best parameters Kernel SVM: lambda={best_lambda_ksvm}, gamma={best_gamma
     lambdas=lambdas, gammas=gammas, k=5,
     epochs=50
 )
-print(f"Best parameters Kernel LR: lambda={best_lambda_ksvm}, gamma={best_gamma_ksvm}")
+print(f"Best parameters Kernel LR: lambda={best_lambda_klr}, gamma={best_gamma_klr}")
 
 # final model train and evaluation
 ksvm_model, ksvm_train_metrics, ksvm_test_metrics = train_and_evaluate(
