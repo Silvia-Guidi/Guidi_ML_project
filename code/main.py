@@ -18,31 +18,31 @@ wine_quality = fetch_ucirepo(id=186)
 df = pd.concat([wine_quality.data.features, wine_quality.data.targets], axis=1)
 #print(df.isnull().sum())
 
-fig, axes = plt.subplots(3, 4, figsize=(16, 10))
-axes = axes.flatten()
-for i, col in enumerate(df.columns):
-    sns.histplot(df[col], kde=False, ax=axes[i], color="#2CEAA3")
-    axes[i].set_title(f"Distribution of {col}", fontsize=12)
-fig.suptitle("Distribution of the variables: histograms", fontsize=16)
-plt.tight_layout()
+#fig, axes = plt.subplots(3, 4, figsize=(16, 10))
+#axes = axes.flatten()
+#for i, col in enumerate(df.columns):
+    #sns.histplot(df[col], kde=False, ax=axes[i], color="#2CEAA3")
+    #axes[i].set_title(f"Distribution of {col}", fontsize=12)
+#fig.suptitle("Distribution of the variables: histograms", fontsize=16)
+#plt.tight_layout()
 #plt.show()
 
-fig, axes = plt.subplots(3, 4, figsize=(16,10))  # 3 rows, 4 columns
-axes = axes.flatten()
-for i, col in enumerate(df.columns):
-    axes[i].boxplot(df[col], patch_artist=True, boxprops=dict(facecolor="#2CEAA3"))
-    axes[i].set_title(col)
-fig.suptitle("Distribition of the variables: boxplots", fontsize=16)
-plt.tight_layout()
+#fig, axes = plt.subplots(3, 4, figsize=(16,10))  # 3 rows, 4 columns
+#axes = axes.flatten()
+#for i, col in enumerate(df.columns):
+    #axes[i].boxplot(df[col], patch_artist=True, boxprops=dict(facecolor="#2CEAA3"))
+    #axes[i].set_title(col)
+#fig.suptitle("Distribition of the variables: boxplots", fontsize=16)
+#plt.tight_layout()
 #plt.show()
 
 #print(df.describe())
 #print(df.corr())
 
 ##heatmap PLOT
-plt.figure(figsize=(8,15))
-sns.heatmap(df.corr(), annot=True, fmt=".2f", cmap="coolwarm", cbar=True)
-plt.title("Correlation Heatmap", fontsize=16, pad=20)
+#plt.figure(figsize=(8,15))
+#sns.heatmap(df.corr(), annot=True, fmt=".2f", cmap="coolwarm", cbar=True)
+#plt.title("Correlation Heatmap", fontsize=16, pad=20)
 #plt.show()
 
 #data preprocessing
@@ -53,10 +53,10 @@ target = np.where(df["quality"] >= 6, 1, -1)
 classes, counts = np.unique(target, return_counts=True)
 labels = ['Bad', ' Good']
 colors = ['#FF9999', '#2CEAA3']
-plt.figure(figsize=(5,5))
-plt.pie(counts, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90,
-        wedgeprops={'edgecolor':'k'})
-plt.title("Proportion of Quality classes")
+#plt.figure(figsize=(5,5))
+#plt.pie(counts, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90,
+        #wedgeprops={'edgecolor':'k'})
+#plt.title("Proportion of Quality classes")
 #plt.show()
 features = df.drop(columns=["quality"]).to_numpy(dtype=np.float64)
 features_train, features_test, target_train, target_test = train_test_split(
@@ -70,11 +70,11 @@ features_test = (features_test - mean_train) / std_train
 
 n_features = features_train.shape[1]
 fig, axes = plt.subplots(1, n_features, figsize=(3*n_features, 5))
-for i in range(n_features):
-    axes[i].boxplot(features_train[:, i], patch_artist=True,
-                    boxprops=dict(facecolor="#2CEAA3"))
-    axes[i].set_title(feature_names[i], fontsize=7)
-plt.tight_layout()
+#for i in range(n_features):
+    #axes[i].boxplot(features_train[:, i], patch_artist=True,
+                    #boxprops=dict(facecolor="#2CEAA3"))
+    #axes[i].set_title(feature_names[i], fontsize=7)
+#plt.tight_layout()
 #plt.show()
 print(np.isnan(features_train).any())
 print(np.isnan(features_test).any())
@@ -110,7 +110,7 @@ print(f"Linear Logistic Regression Test Accuracy: {lr_test_metrics['accuracy']:.
 
 # Kernel SVM
 (best_lambda_ksvm, best_gamma_ksvm), kernel_svm_results = cross_val_score_kernel(
-    KernelSVM, features_train, target_train, etas=0.1,
+    KernelSVM, features_train, target_train,
     lambdas=lambdas, gammas=gammas, k=5,
     epochs=15
 )
@@ -126,7 +126,7 @@ print(f"Best parameters Kernel LR: lambda={best_lambda_ksvm}, gamma={best_gamma_
 # final model train and evaluation
 ksvm_model, ksvm_train_metrics, ksvm_test_metrics = train_and_evaluate(
     KernelSVM, features_train, target_train, features_test, target_test,
-    best_lambda_ksvm, gamma=best_gamma_ksvm, eta=0.1, epochs=15
+    best_lambda_ksvm, gamma=best_gamma_ksvm, epochs=100
 )
 print(f"Kernel SVM Test Accuracy: {ksvm_test_metrics['accuracy']:.4f}")
 
