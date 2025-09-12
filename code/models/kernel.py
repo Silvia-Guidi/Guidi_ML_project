@@ -72,6 +72,7 @@ class KernelSVM:
         self.batch_size=int(batch_size)
         self.random_state = int(random_state)
         self.alpha = None
+        self.b = 0.0
         self.X_train = None
         self.y_train = None
         self.history_ = {"hinge_loss": []}
@@ -84,6 +85,7 @@ class KernelSVM:
         self.X_train = X.copy()
         self.y_train = y.copy()
         self.alpha = np.zeros(n, dtype=np.float64)
+        self.b = 0.0
         if K_train is None:
             K_train = kernel(X, X, self.gamma)
         t=1
@@ -93,7 +95,7 @@ class KernelSVM:
                 batch_idx = perm[start:start + self.batch_size]
                 yb = y[batch_idx]
                 K_b_all = K_train[batch_idx, :]
-                f_b = K_b_all @ (self.alpha * self.y_train) 
+                f_b = K_b_all @ (self.alpha * self.y_train) + self.b
 
                 viol_mask = (yb * f_b) < 1.0
                 eta_t = 1.0 / (self.lambda_reg * t)
@@ -102,10 +104,12 @@ class KernelSVM:
                 if np.any(viol_mask):
                     viol_idx = batch_idx[viol_mask]
                     self.alpha[viol_idx] += eta_t * yb[viol_mask]
+                    grad_b = - np.mean(yb[viol_mask]) 
+                    self.b -= eta_t * grad_b
                 t += 1
             # track hinge loss
             K_full = K_train
-            f_all=K_full @ (self.alpha * self.y_train) 
+            f_all=K_full @ (self.alpha * self.y_train) + self.b
             hinge= np.maximum(0,1-self.y_train*f_all).mean()
             reg=0.5*self.lambda_reg*((self.alpha * self.y_train) @ (K_full @ (self.alpha * self.y_train)))
             self.history_["hinge_loss"].append(float(hinge+reg))
@@ -113,7 +117,7 @@ class KernelSVM:
 
     def decision_function(self, X):
         K_test = kernel(X, self.X_train, self.gamma)
-        return K_test @ (self.alpha * self.y_train)
+        return K_test @ (self.alpha * self.y_train) + self.b
     def predict(self, X):
         return np.where(self.decision_function(X) >= 0, 1, -1)
     def score(self, X, y):
