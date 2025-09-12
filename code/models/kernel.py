@@ -82,15 +82,18 @@ class KernelSVM:
         X = X.astype(np.float64)
         y = y.astype(np.float64)
         n = X.shape[0]
+
         self.X_train = X.copy()
         self.y_train = y.copy()
         self.alpha = np.zeros(n, dtype=np.float64)
         self.b = 0.0
+
         if K_train is None:
             K_train = kernel(X, X, self.gamma)
-        t=1
+
+        t = 1
         for epoch in range(self.epochs):
-            perm=rng.permutation(n)
+            perm = rng.permutation(n)
             for start in range(0, n, self.batch_size):
                 batch_idx = perm[start:start + self.batch_size]
                 yb = y[batch_idx]
@@ -99,20 +102,25 @@ class KernelSVM:
 
                 viol_mask = (yb * f_b) < 1.0
                 eta_t = 1.0 / (self.lambda_reg * t)
+            # shrink alphas
                 self.alpha *= (1.0 - eta_t * self.lambda_reg)
-
+            # update violating alphas
                 if np.any(viol_mask):
                     viol_idx = batch_idx[viol_mask]
                     self.alpha[viol_idx] += eta_t * yb[viol_mask]
-                    grad_b = - np.mean(yb[viol_mask]) 
-                    self.b -= eta_t * grad_b
+            # update bias
+                self.b += eta_t * np.mean(yb[viol_mask])
                 t += 1
-            # track hinge loss
+        # Compute alpha * y once
+            alpha_y = self.alpha * self.y_train
             K_full = K_train
-            f_all=K_full @ (self.alpha * self.y_train) + self.b
-            hinge= np.maximum(0,1-self.y_train*f_all).mean()
-            reg=0.5*self.lambda_reg*((self.alpha * self.y_train) @ (K_full @ (self.alpha * self.y_train)))
-            self.history_["hinge_loss"].append(float(hinge+reg))
+            f_all = K_full @ alpha_y + self.b
+
+        # Track hinge loss + regularizer
+            hinge = np.maximum(0, 1 - self.y_train * f_all).mean()
+            reg = 0.5 * self.lambda_reg * (alpha_y @ f_all)  # reuse f_all here
+            self.history_["hinge_loss"].append(float(hinge + reg))
+
         return self
 
     def decision_function(self, X):

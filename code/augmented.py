@@ -58,9 +58,9 @@ std_train[std_train == 0] = 1
 features_train_aug = (features_train_aug - mean_train) / std_train
 features_test = (features_test - mean_train) / std_train  # use train mean/std
 
-num_points = 6
-lambdas = np.logspace(-4, 0, num=num_points)
-gammas  = np.logspace(-3, 1, num=num_points)
+
+lambdas = np.logspace(-5, -1, num=5)
+gammas  = np.logspace(-3, 1, num=5)
 
 # Linear SVM 
 best_lambda_svm, svm_results = cross_val_score(
