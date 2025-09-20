@@ -63,3 +63,15 @@ def train_and_evaluate(model_class, X_train, y_train, X_test, y_test, best_lambd
     }
 
     return  model, train_metrics, test_metrics
+
+def misclass(model, X_test, y_test, feature_names, max_examples=5):
+    y_pred = model.predict(X_test)
+    mis_idx = np.where(y_pred != y_test)[0]
+
+    print(f"Total misclassified examples: {len(mis_idx)}")
+    print(f"Showing up to {max_examples} examples:\n")
+
+    for i in mis_idx[:max_examples]:
+        print(f"Index: {i}, True: {y_test[i]}, Pred: {y_pred[i]}")
+        features_str = ", ".join([f"{name}={X_test[i, j]:.2f}" for j, name in enumerate(feature_names)])
+        print(f"  Features: {features_str}\n")

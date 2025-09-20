@@ -135,3 +135,24 @@ def plot_cv_results(results, model_name="Model", param_type="linear"):
         plt.legend()
         plt.tight_layout()
         plt.show()
+
+def radar_misclass(model, X_test, y_test, feature_names, model_name, color='b'):
+    y_pred = model.predict(X_test)
+    mis_idx = np.where(y_pred != y_test)[0]
+    if len(mis_idx) == 0:
+        print(f"No misclassifications for {model_name}")
+        return
+    mis_features = X_test[mis_idx]
+    avg_features = np.mean(mis_features, axis=0)
+    # Radar setup
+    labels = np.array(feature_names)
+    stats = np.concatenate((avg_features, [avg_features[0]])) 
+    angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
+    angles += angles[:1]
+    fig, ax = plt.subplots(figsize=(6,6), subplot_kw=dict(polar=True))
+    ax.plot(angles, stats, 'o-', linewidth=2, label=f"{model_name}", color=color)
+    ax.fill(angles, stats, alpha=0.25)
+    ax.set_thetagrids(np.degrees(angles[:-1]), labels)
+    ax.set_title(f"Misclassified Feature Profile - {model_name}")
+    ax.legend(loc="upper right")
+    plt.show()

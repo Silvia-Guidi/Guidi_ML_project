@@ -5,8 +5,8 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from models.linear import LinearSVM, LogisticRegression
 from models.kernel import KernelSVM, KernelLogisticRegression
-from utils.evaluation import cross_val_score, cross_val_score_kernel, train_and_evaluate
-from plots.plots import plot_metrics, plot_confusion_matrices, plot_training_curves,plot_ktraining_curves, plot_cv_results
+from utils.evaluation import cross_val_score, cross_val_score_kernel, train_and_evaluate, misclass
+from plots.plots import plot_metrics, plot_confusion_matrices, plot_training_curves,plot_ktraining_curves, plot_cv_results, radar_misclass
 
 from ucimlrepo import fetch_ucirepo
 wine_quality = fetch_ucirepo(id=186)
@@ -76,13 +76,15 @@ n_features = features_train.shape[1]
     #axes[i].set_title(feature_names[i], fontsize=7)
 #plt.tight_layout()
 #plt.show()
+print(target_train.min())
+print(target_train.max())
 print(np.isnan(features_train).any())
 print(np.isnan(features_test).any())
 print(features_train.mean(axis=0))
 print(features_train.std(axis=0)) 
 
 # get the lambda
-lambdas = np.logspace(-6, -1, num=7)
+lambdas = np.logspace(-4, 0, num=7)
 gammas  = np.logspace(-3, 1, num=6)
 
 # Linear SVM 
@@ -136,21 +138,10 @@ klr_model, klr_train_metrics, klr_test_metrics = train_and_evaluate(
 print(f"Kernel Logistic Regression Test Accuracy: {klr_test_metrics['accuracy']:.4f}")
 
 # misclassification analysis
-def misclass(model, X_test, y_test, feature_names, max_examples=5):
-    y_pred = model.predict(X_test)
-    mis_idx = np.where(y_pred != y_test)[0]
-
-    print(f"Total misclassified examples: {len(mis_idx)}")
-    print(f"Showing up to {max_examples} examples:\n")
-
-    for i in mis_idx[:max_examples]:
-        print(f"Index: {i}, True: {y_test[i]}, Pred: {y_pred[i]}")
-        features_str = ", ".join([f"{name}={X_test[i, j]:.2f}" for j, name in enumerate(feature_names)])
-        print(f"  Features: {features_str}\n")
-#misclass(svm_model, features_test, target_test, feature_names)
-#misclass(lr_model, features_test, target_test, feature_names)
-#misclass(ksvm_model, features_test, target_test, feature_names)
-#misclass(klr_model, features_test, target_test, feature_names)
+misclass(svm_model, features_test, target_test, feature_names)
+misclass(lr_model, features_test, target_test, feature_names)
+misclass(ksvm_model, features_test, target_test, feature_names)
+misclass(klr_model, features_test, target_test, feature_names)
 
 # plots
 models_metrics = {
@@ -167,3 +158,7 @@ plot_cv_results(svm_results, model_name="Linear SVM", param_type="linear")
 plot_cv_results(lr_results, model_name="Linear Logistic Regression", param_type="linear")
 plot_cv_results(kernel_svm_results, model_name="Kernel SVM", param_type="kernel")
 plot_cv_results(kernel_lr_results, model_name="Kernel Logistic Regression", param_type="kernel")
+radar_misclass(svm_model, features_test, target_test, feature_names, "SVM")
+radar_misclass(lr_model, features_test, target_test, feature_names, "LogReg")
+radar_misclass(ksvm_model, features_test, target_test, feature_names, "Kernel SVM")
+radar_misclass(klr_model, features_test, target_test, feature_names, "Kernel Logistic Regression")
