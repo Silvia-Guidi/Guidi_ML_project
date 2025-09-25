@@ -43,6 +43,7 @@ class KernelLogisticRegression:
         K_train = kernel(X, X, kind=self.kind, gamma=self.gamma, degree=self.degree, coef0=self.coef0) + 1e-12 * np.eye(n)
         K_train += 1e-12 * np.eye(n)  # jitter for stability
         K_train = np.clip(K_train, 0, 1e10) 
+        self.K_train = K_train
 
         for epoch in range(1, self.epochs + 1):
             f = K_train @ self.alpha + self.b
@@ -106,7 +107,8 @@ class KernelSVM:
         self.alpha = np.zeros(n, dtype=np.float64)
         self.history_ = {"hinge_loss": [], "val_loss": [], "train_acc": [], "val_acc": []}
         if K_train is None:
-            K_train = kernel(X, X, kind=self.kind, gamma=self.gamma, degree=self.degree, coef0=self.coef0) 
+            K_train = kernel(X, X, kind=self.kind, gamma=self.gamma, degree=self.degree, coef0=self.coef0)
+        self.K_train = K_train
         t = 1
         for epoch in range(self.epochs):
             perm = rng.permutation(n)
