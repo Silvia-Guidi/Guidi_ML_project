@@ -83,7 +83,7 @@ print(np.isnan(features_test).any())
 print(features_train.mean(axis=0))
 print(features_train.std(axis=0)) 
 
-# get the lambda
+# parameters grids
 lambdas = np.logspace(-4, 0, num=7)
 gammas  = np.logspace(-3, 1, num=6)
 degrees = [2, 3, 4]
