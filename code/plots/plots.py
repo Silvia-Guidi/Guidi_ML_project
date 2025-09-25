@@ -64,15 +64,32 @@ def plot_confusion_matrices(models_metrics, class_labels=[1, -1]):
 
 # training curves
 def plot_training_curves(svm_model, lr_model):
-    plt.figure(figsize=(10,4))
-    # SVM
-    plt.plot(svm_model.history_["obj"], label="SVM (hinge loss)")
-    # LR
-    plt.plot(lr_model.history_["loss"], label="LR (log loss)")
+    plt.figure(figsize=(12,5))
+    plt.subplot(1, 2, 1)
+    plt.plot(svm_model.history_["obj"], label="SVM train")
+    if "val_obj" in svm_model.history_:
+        plt.plot(svm_model.history_["val_obj"], label="SVM val", linestyle="--")
+    plt.plot(lr_model.history_["loss"], label="LR train")
+    if "val_loss" in lr_model.history_:
+        plt.plot(lr_model.history_["val_loss"], label="LR val", linestyle="--")
     
     plt.xlabel("Epoch")
-    plt.ylabel("Objective / Loss")
-    plt.title("Training Convergence linear models")
+    plt.ylabel("Loss / Objective")
+    plt.title("Training & Validation Loss")
+    plt.legend()
+
+    plt.subplot(1, 2, 2)
+    if "train_acc" in svm_model.history_:
+        plt.plot(svm_model.history_["train_acc"], label="SVM train acc")
+    if "val_acc" in svm_model.history_:
+        plt.plot(svm_model.history_["val_acc"], label="SVM val acc", linestyle="--")
+    if "train_acc" in lr_model.history_:
+        plt.plot(lr_model.history_["train_acc"], label="LR train acc")
+    if "val_acc" in lr_model.history_:
+        plt.plot(lr_model.history_["val_acc"], label="LR val acc", linestyle="--")
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy")
+    plt.title("Training & Validation Accuracy")
     plt.legend()
     plt.tight_layout()
     plt.show()
