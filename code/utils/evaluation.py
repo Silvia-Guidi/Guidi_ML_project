@@ -19,28 +19,45 @@ def cross_val_score(model_class, X, y, lambdas, k=5, **model_params):
     best_lambda = max(results, key=results.get)
     return best_lambda, results
 
-def cross_val_score_kernel(model_class, X, y, lambdas, gammas, k=5, **model_params):
-    results={}
-    kf= KFold(n_splits=k, shuffle=True, random_state=42)
+def cross_val_score_kernel(model_class, X, y, lambdas, gammas, degrees=None, k=5, kind="gamma", **model_params):
+    results = {}
+    kf = KFold(n_splits=k, shuffle=True, random_state=42)
     for lam in lambdas:
         for gamma in gammas:
-            folders_scores = []
-            for train_idx, val_idx in kf.split(X):
-                X_train, X_val = X[train_idx], X[val_idx]
-                y_train, y_val = y[train_idx], y[val_idx]
+            if kind == "poly":
+                if degrees is None:
+                    raise ValueError("Degrees must be provided for polynomial kernel")
+                degree_iter = degrees
+            else:  
+                degree_iter = [None]
 
-                model = model_class(lambda_reg=lam, gamma=gamma, **model_params)
-                model.fit(X_train, y_train)
-                folders_scores.append(model.score(X_val, y_val))
-            results[(lam, gamma)] = (np.mean(folders_scores), np.std(folders_scores))
-    best_lambda, best_gamma = max(results, key=lambda x: results[x][0])
-    return (best_lambda, best_gamma), results
+            for degree in degree_iter:
+                folders_scores = []
+                for train_idx, val_idx in kf.split(X):
+                    X_train, X_val = X[train_idx], X[val_idx]
+                    y_train, y_val = y[train_idx], y[val_idx]
+                    model_kwargs = {"lambda_reg": lam, "gamma": gamma, "kind": kind, **model_params}
+                    if kind == "poly":
+                        model_kwargs["degree"] = degree
+                    model = model_class(**model_kwargs)
+                    model.fit(X_train, y_train)
+                    folders_scores.append(model.score(X_val, y_val))
+                results[(lam, gamma, degree)] = (np.mean(folders_scores), np.std(folders_scores))
 
+    best_lambda, best_gamma, best_degree = max(results, key=lambda x: results[x][0])
+    if kind == "poly":
+        return (best_lambda, best_gamma, best_degree), results
+    else:  
+        return (best_lambda, best_gamma), results
+    
 def train_and_evaluate(model_class, X_train, y_train, X_test, y_test, best_lambda, **model_params):
+    if "degree" not in model_params:
+        model_params["degree"] = None
+    if "coef0" not in model_params:
+        model_params["coef0"] = 1  
+
     model = model_class(lambda_reg=best_lambda, **model_params)
     model.fit(X_train, y_train)
-
-    # Predictions
     y_pred_test = model.predict(X_test)
     y_pred_train = model.predict(X_train)
 
@@ -52,7 +69,6 @@ def train_and_evaluate(model_class, X_train, y_train, X_test, y_test, best_lambd
         "f1": f1_score(y_test, y_pred_test, pos_label=1),
         "confusion_matrix": confusion_matrix(y_test, y_pred_test, labels=[1, -1])
     }
-
     # Metrics on train set
     train_metrics = {
         "accuracy": (y_pred_train == y_train).mean(),
@@ -61,8 +77,7 @@ def train_and_evaluate(model_class, X_train, y_train, X_test, y_test, best_lambd
         "f1": f1_score(y_train, y_pred_train, pos_label=1),
         "confusion_matrix": confusion_matrix(y_train, y_pred_train, labels=[1, -1])
     }
-
-    return  model, train_metrics, test_metrics
+    return model, train_metrics, test_metrics
 
 def misclass(model, X_test, y_test, feature_names, max_examples=5):
     y_pred = model.predict(X_test)

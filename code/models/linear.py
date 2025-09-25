@@ -1,7 +1,7 @@
 import numpy as np
 ## SVM 
 class LinearSVM:
-    def __init__(self, lambda_reg=1e-3, epochs=15, batch_size=64, shuffle=True, random_state=42):
+    def __init__(self, lambda_reg=1e-3, epochs=15, batch_size=64, shuffle=True, random_state=42, degree=None, coef0=1):
         self.lambda_reg = float(lambda_reg)
         self.epochs = int(epochs)
         self.batch_size = int(batch_size)
@@ -10,6 +10,8 @@ class LinearSVM:
         self.w = None
         self.b = 0.0
         self.history_ = {"obj": []} 
+        self.degree=degree
+        self.coef0=coef0
     
     def _hingelosses(self, X, y):
         margins = 1 - y * (X @ self.w + self.b)
@@ -69,7 +71,7 @@ class LinearSVM:
 # Logistic Regression
 class LogisticRegression:
     def __init__(self, lambda_reg=1e-3, epochs=50, batch_size=64, eta=0.1,
-                 shuffle=True, random_state=42):
+                 shuffle=True, random_state=42, degree=None, coef0=1):
         self.lambda_reg = float(lambda_reg)
         self.epochs = int(epochs)
         self.batch_size = int(batch_size)
@@ -79,6 +81,8 @@ class LogisticRegression:
         self.w = None
         self.b = 0.0
         self.history_ = {"loss": []}  # track loss per epoch
+        self.degree=degree
+        self.coef0=coef0
 
     def _sigmoid(self, z):
         return 1 / (1 + np.exp(-z))
