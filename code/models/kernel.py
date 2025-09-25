@@ -1,4 +1,5 @@
 import numpy as np
+from utils.evaluation import val_metrics
 
 # Kernel
 def kernel(X, Y, kind="gamma", gamma=0.1, degree=3, coef0=1):
@@ -25,13 +26,13 @@ class KernelLogisticRegression:
         self.alpha = None
         self.b = 0.0
         self.X_train = None
-        self.history_ = {"log_loss": []}
+        self.history_ = {"log_loss": [], "val_loss": [], "train_acc": [], "val_acc": []}
 
     def _stable_sigmoid(self, z):
         z = np.clip(z, -50, 50)
         return 1 / (1 + np.exp(-z))
 
-    def fit(self, X, y,):
+    def fit(self, X, y, X_val=None, y_val=None):
         X = X.astype(np.float64)
         y = y.astype(np.float64)
         n = X.shape[0]
@@ -53,10 +54,16 @@ class KernelLogisticRegression:
             # update
             self.alpha -= self.eta * grad_alpha
             self.b -= self.eta * grad_b
-            # track log loss
+            # update history
             loss = -np.mean(y01 * np.log(p + 1e-12) + (1 - y01) * np.log(1 - p + 1e-12))
             loss += 0.5 * self.lambda_reg * (self.alpha @ K_train @ self.alpha)
             self.history_["log_loss"].append(float(loss))
+            train_acc = (self.predict(X) == y).mean()
+            self.history_["train_acc"].append(train_acc)
+            if X_val is not None and y_val is not None:
+                val_loss, val_acc = val_metrics(self, X_val, y_val, kind="kernel_logreg")  
+                self.history_["val_loss"].append(val_loss)
+                self.history_["val_acc"].append(val_acc)
 
         return self
 
@@ -88,21 +95,18 @@ class KernelSVM:
         self.alpha = None
         self.X_train = None
         self.y_train = None
-        self.history_ = {"hinge_loss": []}
+        self.history_ = {"log_loss": [], "val_loss": [], "train_acc": [], "val_acc": []}
 
-    def fit(self, X, y, K_train=None):
+    def fit(self, X, y, X_val=None, y_val=None, K_train=None):
         rng = np.random.default_rng(self.random_state)
         X = X.astype(np.float64)
         y = y.astype(np.float64)
         n = X.shape[0]
-
         self.X_train = X.copy()
         self.y_train = y.copy()
         self.alpha = np.zeros(n, dtype=np.float64)
-
         if K_train is None:
             K_train = kernel(X, X, kind=self.kind, gamma=self.gamma, degree=self.degree, coef0=self.coef0) 
-
         t = 1
         for epoch in range(self.epochs):
             perm = rng.permutation(n)
@@ -126,10 +130,16 @@ class KernelSVM:
             K_full = K_train
             f_all = K_full @ alpha_y 
 
-        # Track hinge loss + regularizer
+        # Update history
             hinge = np.maximum(0, 1 - self.y_train * f_all).mean()
             reg = 0.5 * self.lambda_reg * (alpha_y @ K_full @ alpha_y)
             self.history_["hinge_loss"].append(float(hinge + reg))
+            train_acc = (self.predict(X) == y).mean()
+            self.history_["train_acc"].append(train_acc)
+            if X_val is not None and y_val is not None:
+                val_loss, val_acc = val_metrics(self, X_val, y_val, kind="kernel_svm")  
+                self.history_["val_loss"].append(val_loss)
+                self.history_["val_acc"].append(val_acc)
 
         return self
 

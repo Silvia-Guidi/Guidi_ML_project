@@ -95,19 +95,33 @@ def plot_training_curves(svm_model, lr_model):
     plt.show()
 
 def plot_ktraining_curves(ksvm_model, klr_model):
-    plt.figure(figsize=(10,4))
-    # SVM
-    plt.plot(ksvm_model.history_["hinge_loss"], label="SVM (hinge loss)")
-    # LR
-    plt.plot(klr_model.history_["log_loss"], label="LR (log loss)")
-    
+    plt.figure(figsize=(12,5))
+    plt.subplot(1, 2, 1)
+    plt.plot(ksvm_model.history_["hinge_loss"], label="SVM train")
+    if "val_loss" in ksvm_model.history_:
+        plt.plot(ksvm_model.history_["val_loss"], label="SVM val", linestyle="--")
+    plt.plot(klr_model.history_["log_loss"], label="LR train")
+    if "val_loss" in klr_model.history_:
+        plt.plot(klr_model.history_["val_loss"], label="LR val", linestyle="--")
     plt.xlabel("Epoch")
-    plt.ylabel("Objective / Loss")
-    plt.title("Training Convergence kernel models")
+    plt.ylabel("Loss / Objective")
+    plt.title("Training & Validation Loss (Kernel Models)")
+    plt.legend()
+    plt.subplot(1, 2, 2)
+    if "train_acc" in ksvm_model.history_:
+        plt.plot(ksvm_model.history_["train_acc"], label="SVM train acc")
+    if "val_acc" in ksvm_model.history_:
+        plt.plot(ksvm_model.history_["val_acc"], label="SVM val acc", linestyle="--")
+    if "train_acc" in klr_model.history_:
+        plt.plot(klr_model.history_["train_acc"], label="LR train acc")
+    if "val_acc" in klr_model.history_:
+        plt.plot(klr_model.history_["val_acc"], label="LR val acc", linestyle="--")
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy")
+    plt.title("Training & Validation Accuracy (Kernel Models)")
     plt.legend()
     plt.tight_layout()
     plt.show()
-
 #cv results
 def plot_cv_results(results, model_name="Model", param_type="linear"):
     if param_type == "linear":

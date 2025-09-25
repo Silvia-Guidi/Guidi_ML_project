@@ -1,4 +1,5 @@
 import numpy as np
+from utils.evaluation import val_metrics
 ## SVM 
 class LinearSVM:
     def __init__(self, lambda_reg=1e-3, epochs=15, batch_size=64, shuffle=True, random_state=42, degree=None, coef0=1):
@@ -54,10 +55,10 @@ class LinearSVM:
             train_acc = (self.predict(X) == y).mean()
             self.history_["train_acc"].append(train_acc)
             if X_val is not None and y_val is not None:
-                val_obj = self._hingelosses(X_val, y_val)
-                val_acc = (self.predict(X_val) == y_val).mean()
-                self.history_["val_obj"].append(val_obj)
+                val_loss, val_acc = val_metrics(self, X_val, y_val, kind="linear")  
+                self.history_["val_loss"].append(val_loss)
                 self.history_["val_acc"].append(val_acc)
+
 
         return self
     
@@ -120,10 +121,10 @@ class LogisticRegression:
             train_acc = (self.predict(X) == y).mean()
             self.history_["train_acc"].append(train_acc)
             if X_val is not None and y_val is not None:
-                val_loss = self._loss(X_val, y_val)
-                val_acc = (self.predict(X_val) == y_val).mean()
+                val_loss, val_acc = val_metrics(self, X_val, y_val, kind="linear")  
                 self.history_["val_loss"].append(val_loss)
                 self.history_["val_acc"].append(val_acc)
+
         return self
 
     def decision_function(self, X):

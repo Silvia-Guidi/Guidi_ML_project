@@ -196,5 +196,5 @@ radar_misclass(svm_model, features_test, target_test, feature_names, "SVM", colo
 radar_misclass(lr_model, features_test, target_test, feature_names, "LogReg", color="#9ef01a")
 radar_misclass(gksvm_model, features_test, target_test, feature_names, "Gaussian Kernel SVM", color="#28c2ff")
 radar_misclass(gklr_model, features_test, target_test, feature_names, "Gaussian Kernel Logistic Regression", color="#70e000")
-radar_misclass(pksvm_model, features_test, target_test, feature_names, "Polynomial Kernel SVM", color="#28c2ff")
-radar_misclass(pklr_model, features_test, target_test, feature_names, "Polynomial Kernel Logistic Regression", color="#70e000")
+radar_misclass(pksvm_model, features_test, target_test, feature_names, "Polynomial Kernel SVM", color="#60afff")
+radar_misclass(pklr_model, features_test, target_test, feature_names, "Polynomial Kernel Logistic Regression", color="#38b000")
