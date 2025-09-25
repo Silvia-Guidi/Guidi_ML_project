@@ -1,5 +1,4 @@
 import numpy as np
-from models.kernel import kernel
 from sklearn.model_selection import KFold
 from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix
 
@@ -40,7 +39,7 @@ def cross_val_score_kernel(model_class, X, y, lambdas, gammas, degrees=None, k=5
                     if kind == "poly":
                         model_kwargs["degree"] = degree
                     model = model_class(**model_kwargs)
-                    model.fit(X_train, y_train)
+                    model.fit(X_train, y_train, X_val=X_val, y_val=y_val)
                     folders_scores.append(model.score(X_val, y_val))
                 results[(lam, gamma, degree)] = (np.mean(folders_scores), np.std(folders_scores))
 
@@ -86,30 +85,30 @@ def misclass(model, X_test, y_test, feature_names, max_examples=5):
     print(f"Total misclassified examples: {len(mis_idx)}")
     print(f"Showing up to {max_examples} examples:\n")
 
-    for i in mis_idx[:max_examples]:
-        print(f"Index: {i}, True: {y_test[i]}, Pred: {y_pred[i]}")
-        features_str = ", ".join([f"{name}={X_test[i, j]:.2f}" for j, name in enumerate(feature_names)])
-        print(f"  Features: {features_str}\n")
-
 def val_metrics(model, X_val, y_val, kind="linear"):
     val_acc = (model.predict(X_val) == y_val).mean()
+
     if kind == "linear":
-        if hasattr(model, "_loss"):
+        if hasattr(model, "_loss"):  # Logistic
             val_loss = model._loss(X_val, y_val)
-        else:  # LinearSVM
+        else:  # Linear SVM
             val_loss = model._hingelosses(X_val, y_val)
+
     elif kind == "kernel_logreg":
         y_val01 = (y_val + 1) / 2
-        f_val = model.decision_function(X_val)
-        val_loss = -np.mean(y_val01 * np.log(f_val + 1e-12) + (1 - y_val01) * np.log(1 - f_val + 1e-12))
-        val_loss += 0.5 * model.lambda_reg * (model.alpha @ kernel(model.X_train, model.X_train, kind=model.kind,
-                                   gamma=model.gamma, degree=getattr(model, "degree", 3)) @ model.alpha)
+        f_val = model.decision_function(X_val)  
+        p_val = 1 / (1 + np.exp(-np.clip(f_val, -50, 50)))  
+        val_loss = -np.mean(y_val01 * np.log(p_val + 1e-12) + (1 - y_val01) * np.log(1 - p_val + 1e-12))
+        val_loss += 0.5 * model.lambda_reg * (model.alpha @ model.K_train @ model.alpha) 
+
     elif kind == "kernel_svm":
         f_val = model.decision_function(X_val)
         hinge = np.maximum(0, 1 - y_val * f_val).mean()
-        reg = 0.5 * model.lambda_reg * ((model.alpha * model.y_train) @ kernel(model.X_train, model.X_train,
-                    kind=model.kind, gamma=model.gamma, degree=getattr(model, "degree", 3)) @ (model.alpha * model.y_train))
+        alpha_y = model.alpha * model.y_train
+        reg = 0.5 * model.lambda_reg * (alpha_y @ model.K_train @ alpha_y)  
         val_loss = float(hinge + reg)
+
     else:
         raise ValueError("Unknown model kind")
+
     return val_loss, val_acc

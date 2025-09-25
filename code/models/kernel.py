@@ -40,7 +40,6 @@ class KernelLogisticRegression:
         self.alpha = np.zeros(n, dtype=np.float64)
         y01 = (y + 1) / 2  # Map {-1,1} -> {0,1}
         self.b = 0.0
-        self.history_ = {"log_loss": []}
         K_train = kernel(X, X, kind=self.kind, gamma=self.gamma, degree=self.degree, coef0=self.coef0) + 1e-12 * np.eye(n)
         K_train += 1e-12 * np.eye(n)  # jitter for stability
         K_train = np.clip(K_train, 0, 1e10) 
@@ -95,7 +94,7 @@ class KernelSVM:
         self.alpha = None
         self.X_train = None
         self.y_train = None
-        self.history_ = {"log_loss": [], "val_loss": [], "train_acc": [], "val_acc": []}
+        self.history_ = {"hinge_loss": [], "val_loss": [], "train_acc": [], "val_acc": []}
 
     def fit(self, X, y, X_val=None, y_val=None, K_train=None):
         rng = np.random.default_rng(self.random_state)
@@ -105,6 +104,7 @@ class KernelSVM:
         self.X_train = X.copy()
         self.y_train = y.copy()
         self.alpha = np.zeros(n, dtype=np.float64)
+        self.history_ = {"hinge_loss": [], "val_loss": [], "train_acc": [], "val_acc": []}
         if K_train is None:
             K_train = kernel(X, X, kind=self.kind, gamma=self.gamma, degree=self.degree, coef0=self.coef0) 
         t = 1

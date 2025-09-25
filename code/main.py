@@ -145,6 +145,7 @@ print(f"Gaussian Kernel Logistic Regression Test Accuracy: {gklr_test_metrics['a
     epochs=15, batch_size=64, kind="poly"
 )
 print(f"Best parameters Polynomial Kernel SVM: lambda={best_lambda_pksvm}, gamma={best_gamma_pksvm}, degree={best_degree_ksvm}")
+
 # Polynomial Kernel Logistic Regression gamma
 (best_lambda_pklr, best_gamma_pklr, best_degree_klr), pkernel_lr_results = cross_val_score_kernel(
     KernelLogisticRegression, features_train, target_train, eta=0.1,
