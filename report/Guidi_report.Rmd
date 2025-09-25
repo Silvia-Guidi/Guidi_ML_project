@@ -1,45 +1,204 @@
 ---
 title: "Guidi_report"
 author: "Silvia Guidi"
-date: "2025-08-18"
 output: pdf_document
+editor_options: 
+  markdown: 
+    wrap: sentence
+header-includes:
+  - \DeclareUnicodeCharacter{2212}{-}
+  - \DeclareUnicodeCharacter{2248}{\ensuremath{\approx}}
+  - \usepackage{float}
 ---
 
-# Report title
+# Introduction
 
-## Introduction
+# Data Exploration and Preprocessing
 
-## Data Exploration and Preprocessing
+The dataset provides comprises of 6497 observations and 12 numerical variables.
+Each variable measures a different component of wine: fixed and volatile acidity, citric acid, residual sugar, chlorides, both free and total sulfur dioxide, density, the ph, sulphates, and alcohol.
+All these represent the features that will be used to classify each observation, while the target variable used will be 'quality'.
 
-The dataset provided comprises of 6497 observations and 12 numerical variables. Each variable measures a different component of wine: fixed and volatile acidity, citric acid, residual sugar, chlorides, both free and total sulfur dioxide, density, the ph, sulphates, and alcohol. All these represents the features that will be used to classify the wine, while the target variable used will be 'quality'.
+A first look reveals that the distribution of the variables is overall skewed, as figure 1 depicts.
+Most of the observations tend to be on the lowest values of the range and around the mean, with the exception of 'total sulfur dioxide', 'ph', 'alcohol' and 'quality', which tend to be slightly more centered and spread.
 
-The distribution of the variables is overall skewed, as figure 1 depicts. Most of the observations tend to be on the lowest values of the range and around the mean, with the exception of 'total sulfur dioxide', 'ph', 'alcohol' and 'quality', which tend to be slightly more centered and spread.
-
-```{r fig-hist, fig.cap="distribution of variables represented using histograms", echo=FALSE, fig.pos='H'}
+```{r fig-hist, fig.cap="Distribution of variables represented using histograms", echo=FALSE, fig.pos='H'}
 knitr::include_graphics("histograms.png")
 ```
 
-Figure 2 gives another perspective on the distributions considered. Here it is possible to see better how observations tend to be around the mean in most cases, with the exception of the four cases highlighted before. Moreover, it is evident that in all variables there are potential outliers, which explains why in figure 1 most graphs are shifted on the left and not centered. 
+Figure 2 gives another perspective on the distributions considered.
+Here it is possible to better see how observations tend to be around the mean in most cases, with the four exceptions highlighted before.
+Moreover, it is evident that in all variables there are potential outliers, which explains why in figure 1 most graphs are shifted on the left and not centered.
 
-```{r fig-box, fig.cap="distribution of variables represented using boxplots", echo=FALSE, fig.pos='H'}
+```{r fig-box, fig.cap="Distribution of variables represented using boxplots", echo=FALSE, fig.pos='H'}
 knitr::include_graphics("Boxplots.png")
 ```
 
-Finally, the correlation between the variables was investigated. The heath map in figure 3 shows that most variables are mildly correlated. There are two that stand out for their high value: 0.72 for free and total sulfur dioxide and -0.69 for density and alcohol. These two results can be justified using qualitative reasoning: in the first case the variables share the same object measured - sulfur dioxide; in the second case, chemically, ethanol (the element of alcohol) has a lower density compared to the water components of the wine, thus the negative relation. Focusing on the target, all the relations are negative and not strong, with the exception of 'alcohol' which has positive sign and medium strength. From these results it is not expected to find multicollinearity between any variable, however in phase of evaluation of the regression model due controls will be performed to ensure this. 
+Finally, the correlation between the variables is investigated.
+The heath map in figure 3 shows that most variables are mildly correlated.
+There are two relations that stand out for their high value: 0.72 for free and total sulfur dioxide and -0.69 for density and alcohol.
+These two results can be justified using qualitative reasoning: in the first case the variables share the same object measured - sulfur dioxide; in the second case, chemically, ethanol (the element of alcohol) has a lower density compared to the water components of the wine, thus the negative relation.
+Focusing on the target, all the relations are negative and not strong, with the exception of 'alcohol' which has positive sign and medium strength.
 
-```{r fig-corr, fig.cap="representation of the correlation with a heatmap", echo=FALSE, fig.pos='H'}
+```{r fig-corr, fig.cap="Heathmap of the correlations between variables", echo=FALSE, fig.pos='H'}
 knitr::include_graphics("corr.png")
 ```
 
-After this first investigation of the data as they were provided, some manipulation was performed.
-First, the target variable 'quality' had to be encoded into a binary variable, necessary both for the Support Vector Machine and the Logistic Regression model. This variable measures the quality of the wine on a scale from 0 to 10, therefore the threshold chosen to consider a wine 'good' or 'bad' was 6. Initially the two resulting classes were encoded '1' and '-1' to favor the SVM model, this has later been changed into the '0-1' code for the regression model. 
-The variable needed no further adjustments since the proportion between the two classes (see figure 4) was balanced enough. 
-```{r fig-pie, fig.cap="proprtion of the two classes of the target variable", echo=FALSE, fig.pos='H'}
-knitr::include_graphics("pie.png")
-```
-Afterwards, the training and test sets were created. The choice of the size of each set was made in accordance to the size of the data set and the common practices in machine learning to ensure train adequacy and test reliability. As result, 80% of the data were randomly chosen as training and the remaining 20% - approximately 1300 observations - as test. During this split, in addition to randomization, stratification was implemented to ensure a constant proportion in the classes of the target would be preserved in the two groups.
-Both the training and the test were standardized to have a common scale using the following formula: 
-$$
+After this first investigation of the data as they are provided, some manipulation is performed.
+First, the target variable 'quality' had to be encoded into a binary variable, necessary both for the Support Vector Machine and the Logistic Regression model.
+The target variable measures the quality of the wine on a scale from 0 to 10, therefore the threshold chosen to consider a wine 'good'(encoded as 1), or 'bad'(encoded as -1) is 6.
+The variable needed no further adjustments since the distribution between classes is fairly balanced, with slightly more ‘good’ wines (63.3%) than ‘bad’ ones (36.7%).
+
+Afterwards, the training and test sets are created.
+The choice of the size of each set is made in accordance to the size of the data set and the common practices in machine learning to ensure train adequacy and test reliability.
+As result, 80% of the data were randomly chosen as training and the remaining 20% - approximately 1300 observations - as test.
+During this split, in addition to randomization, stratification is implemented to ensure that a constant proportion in the classes of the target would be preserved in the two groups.
+Both the training and the test are standardized to have a common scale using the following formula: $$
 \text{X}=\frac{X-\mu_{\text{train}}}{\sigma_{\text{train}}}
-$$
-where $\mu$ and $\sigma$ are respectively the mean and the standard deviation of the training error, chosen to avoid problems of data leakage. 
+$$ where $\mu$ and $\sigma$ are respectively the mean and the standard deviation of the training error, chosen to avoid problems of data leakage.
+Figure 4 shows the results of these changes.
+
+```{r fig-scaledbox, fig.cap="Distribution of standardized variables of the training group represented using boxplots", echo=FALSE, fig.pos='H'}
+knitr::include_graphics("scaled_box.png")
+```
+
+Now, the mean of each variable has a value close to zero and standard deviation equals to 1.
+The range of the variables is now unique and optimal for the models.
+Distributions of residual_sugar, free_sulfur_dioxide, total_sulfur_dioxide, chlorides remain skewed.
+Given the quantity of outliers, excluding these points would not be optimal.
+In this cases it has given priority to preserve the dataset as it is, therefore neither skewness nor outliers have been adjusted.
+
+In summary, the dataset was explored, preprocessed, and prepared for modeling.
+The main challenges observed are skewed distributions and outliers, but no severe multicollinearity was detected.
+The binary encoding of quality ensures compatibility with classification algorithms, and standardization guarantees all features are on a comparable scale.
+
+# The models
+
+In this section, each model is presented together with the rationale behind its design and implementation.
+Starting from the linear SVM, then moving to logistic regression, and finally extending both models to their kernelized variants.
+All implementations are written following an object-oriented approach, providing a consistent interface ("fit", "predict", "score", and "decision_function") that facilitates evaluation, comparison, and extension to more complex methods.
+
+## Support Vector Machine
+
+The Support Vector Machine is trained by minimizing the regularized hinge loss: $$\min_{w,b}\frac{\lambda}{2}\| w\| ^2+\frac{1}{n}\sum^n_{i=1}\max\{ 0,1-y_i(w^\top x_i+b)\}$$This formulation does not assume perfect linear separability.
+Instead, it explicitly allows margin violations by penalizing misclassified or weakly classified points through the hinge loss, leading to a solution that is more robust to noise and outliers while still promoting a large margin when possible.
+To solve this optimization problem, a Pegasos-style stochastic subgradient descent is adopted.
+The weight vector $w$ and bias $b$ are initialized to zero and updated in minibatches of size $m$.
+At each update step $t$, the learning rate is set to $\eta_t=\frac{1}{\lambda\cdot t}$.
+Within a minibatch, the algorithm identifies the set of violators $V_t=\{i:y_i(w^\top x_i+b)<1\}$ that fail to meet the margin condition.
+The update proceeds in two parts:
+
+1)  Shrinkage step, which accounts for regularization and discourages overly large weights: $$w\leftarrow(1-\eta_t\lambda)w
+    $$
+2)  Correction step (in case of violations): $$w\leftarrow w+\frac{\eta_t}{|V_t|}\sum_{i\in V}y_ix_i, \quad b\leftarrow b+\frac{\eta_t}{|V_t|}\sum_{i\in V}y_i
+    $$
+
+Thus, the model shrinks the parameters at every step to maintain regularization, while violators push the hyperplane in their favor.
+The training history records the hinge loss plus regularization at the end of each epoch, providing a diagnostic of convergence.
+Predictions are made using the decision function $f(x)=w^\top x+b$, with class labels obtained as $\hat y=\text{sgn}(f(x))$.
+
+## Logistic Regression
+
+Logistic regression is formulated as minimizing the regularized log-loss$$\min_{w,b}\frac{\lambda}{2}\| w\| ^2+\frac{1}{n}\sum^n_{i=1} \log(1+e^{-y_i(w^\top x_i+b)})$$Unlike the hinge loss, the logistic loss arises from a probabilistic model in which labels follow a Bernoulli distribution with success probability given by the sigmoid $\sigma(z) = 1/(1 + e^{-z})$.
+This allows logistic regression to provide calibrated confidence scores in addition to classification.
+The stchastic gradient for a minibatch is computed as: $$\nabla_w=-\frac{1}{m}\sum^m_{i=1}y_ix_i\sigma(-y_if(x_i))+\lambda w, \quad \nabla_b=-\frac{1}{m}\sum^m_{i=1}y_i\sigma(-y_if(x_i))$$where $f(x)=w^\top x+b$.
+The weights and bias are then updated with learning rate $\eta$: $w\leftarrow w-\eta\nabla_w$ and $b\leftarrow b-\eta\nabla_b$.
+The training process tracks the logistic regularization at the end of each epoch.
+Predictions are obtained by thresholding the decision function: $$\hat y=\begin{cases} 1&\text{if }f(x)\geq0,\\-1&\text{otherwise}\end{cases}$$Thus, logistic regression closely mirrors the SVM procedure, but leverages a probabilistic fundation and outputs interpretable confidence scores through the sigmoind function.
+
+## Kernel methods
+
+Linear classifiers can be extended to nonlinear decision boundaries using kernel functions.
+Instead of working directly in the input space, the kernel method implicitly maps inputs into a high-dimensional feature space where a linear separation may exist.
+Two different tricks have been used: the Gaussian ($k(x.x')=\exp(-\gamma\|x-x'\|^2)$) and the polynomial ($k(x.x')=(\gamma x^\top x'+c_0)^d$) both of which enable flexible decision boundaries while keeping computations in the original space.
+The solution in the kernel space can be expressed as $$f(x)=\sum^n_{i=1}\alpha_ik(x,x_i)+b
+$$where $\alpha_i$ are the coefficients assigned to each training point.
+Predictions are obtained by applying the sign function for SVM, or the sigmoind probability model for logistic regression.
+
+### Kernel SVM
+
+The kernelized SVM minimizes the regularized hinge loss $$\min_{w,b}\frac{\lambda}{2}\alpha^\top K\alpha+\frac{1}{n}\sum^n_{i=1}\max\{ 0,1-y_i(f(x_i))\}$$where $K$ is the kernel matrix with entries $K_{ij}=k(x_i,x_j)$ and $f(x_i) = \sum_j \alpha_j y_j K_{ij}$.
+The optimization follows a Pegasos-style subgradient descend in the dual: at each iteration $t$ with step size $\eta_t = \frac{1}{\lambda t}$, a minibatch is sampled and the set of margin violators is identified as $V_t=\{i\in B_t:y_if(x_i)<1\}$.
+The update rule for violators is $$\alpha_i \leftarrow \alpha_i+\frac{\eta_t}{|V_t|}, \quad i\in V_t
+$$followed by a projection step to enforce the dual box constraints.
+At the end of each epoch, the hinge loss plus regularization is tracked to monitor convergence.
+
+### Kernel Logistic Regression
+
+In kernel space, logistic regression minimizes the regularized log-loss$$\min_{\alpha,b}\frac{\lambda}{2}\alpha^\top K\alpha-\frac{1}{n}\sum^n_{i=1}[y_i\log\sigma(f(x_i))+(1-y_i)\log(1-\sigma(f(x_i)))]
+$$where $\sigma(z)=1/(1+e^{-z})$ is the sigmoid and $f(x)=\sum_j \alpha_j K_{ij}+b$.
+Here labels are mapped to ${0,1}$ before computing the loss.
+
+The gradient updates at iteration $t$ are:$$\nabla_\alpha=\frac{1}{n}K(\sigma(f)-y)+\lambda K\alpha, \quad\quad \nabla_b\frac{1}{n}\sum^n_{i=1}(\sigma(f(x_i))-y_i)
+$$The parameters are updated with learning rate $\eta$:$$\alpha\leftarrow\alpha-\eta\nabla_\alpha,\quad\quad b\leftarrow b-\eta\nabla_b
+$$At each epoch, the log-loss plus regularization is tracked, together with training and validation accuracy.
+
+Both kernelized models preserve the same object-oriented interface (fit, predict, score, decision_function), ensuring a seamless comparison between linear and nonlinear variants.
+In practice, kernel methods enable flexible, nonlinear decision boundaries while maintaining the theoretical structure of their linear counterparts.
+
+## Hyperparameter tuning
+
+The performance of both linear and kernelized models depends critically on the choice of hyperparameters.
+The $k$-fold cross-validation technique is employed.
+The training data is split into $k$ folds of equal size; at each iteration, one fold is used as validation set while the model is trained on the remaining $k-1$ folds.
+The mean and standard deviation of the validation scores across all folds are recorded, providing both an estimate of generalization performance and its variability.
+The hyperparameter combination yielding the highest mean validation accuracy is selected.
+
+For linear models, the main hyperparameter is the regularization strength $\lambda$, which controls the trade-off between minimizing the loss and penalizing parameter values.
+A logarithmic grid is explored: $\lambda\in\{10^{-4}, 10^{-3.33}, 10^{-2.66}, 10^{-2}, 10^{-1.33}, 10^{-1.66}, 10^{0}\}$.
+
+For kernel methods, in addition to $\lambda$, kernel-specific parameters must be tuned.
+With the Gaussian kernel, the scale parameter $\gamma$ determines the effective radius of influence of each data point.
+The grid explored is: $\gamma\in\{10^{-3}, 10^{-2.2}, 10^{-1.4}, 10^{-0.6}, 10^{-0.2}, 10^{1}\}$.
+With the polynomial kernel, both $\gamma$ and the polynomial degree $d$ are tuned, as the polynomial order strongly influences the complexity of the induced feature space.
+The degree is selected from a discrete grid: $d\in\{2, 3,4\}$, while $\gamma$ follows the same logarithmic grid as before.
+The offset parameter $c_0$ is kept fixed.
+
+This tuning procedure in implemented in the cross_val_score and cross_val_score_kernel functions, which iterate over all combinations of candidate hyperparameters, evaluate their performance via 5-fold cross validation, and return the configuration achieving the highest validation score.
+
+# Results
+
+## Models performance
+
+```{r fig-metrics, fig.cap="Representation and comaprison of resulting train and test metrics of linear and kernel svm and logistic regression", echo=FALSE}
+knitr::include_graphics("metrics.png")
+```
+
+```{r fig-confusion, fig.cap="Fonfusion matrices of the four models with percentages per row", echo=FALSE}
+knitr::include_graphics("conf.png")
+```
+
+```{r fig-augmented, fig.cap="Metrics and confusion matrices of the four models with percentages per row with augmented dataset", echo=FALSE, fig.show='hold', out.width='49%', fig.pos='H'}
+knitr::include_graphics("metricsaug.png")
+knitr::include_graphics("confaug.png")
+```
+
+## Training dynamics
+
+```{r fig-trainingcurves, fig.cap=" SOMETHING ", echo=FALSE, fig.show='hold', out.width='49%', fig.pos='H'}
+knitr::include_graphics("conv.png")
+knitr::include_graphics("kconv.png")
+```
+
+## Cross-Validation and Hyperparameter Analysis
+
+```{r fig-linearcv, fig.cap=" SOMETHING ", echo=FALSE, fig.show='hold', out.width='49%', fig.pos='H'}
+knitr::include_graphics("lcv.png")
+knitr::include_graphics("llrcv.png")
+```
+
+```{r fig-kernelcv, fig.cap=" SOMETHING ", echo=FALSE, fig.show='hold', out.width='49%', fig.pos='H'}
+knitr::include_graphics("kcv.png")
+knitr::include_graphics("klrcv.png")
+```
+
+## Misclassified Example Analysis
+
+```{r fig-misclassification, fig.cap="Radar representation of the profile of the average misclassified observation", echo=FALSE, fig.show='hold', out.width='49%', fig.pos='H'}
+knitr::include_graphics("mislsvm.png")
+knitr::include_graphics("missllr.png")
+knitr::include_graphics("missksvm.png")
+knitr::include_graphics("missklr.png")
+```
+
+# Conclusion
