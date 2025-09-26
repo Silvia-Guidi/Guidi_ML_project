@@ -41,22 +41,21 @@ class KernelLogisticRegression:
         y01 = (y + 1) / 2  # Map {-1,1} -> {0,1}
         self.b = 0.0
         K_train = kernel(X, X, kind=self.kind, gamma=self.gamma, degree=self.degree, coef0=self.coef0) + 1e-12 * np.eye(n)
-        K_train += 1e-12 * np.eye(n)  # jitter for stability
         K_train = np.clip(K_train, 0, 1e10) 
-        self.K_train = K_train
+        self.K_train = K_train   
 
         for epoch in range(1, self.epochs + 1):
-            f = K_train @ self.alpha + self.b
+            f_no_bias = self.K_train @ self.alpha
+            f = f_no_bias + self.b
             p = self._stable_sigmoid(f)
-            # gradient
-            grad_alpha = (K_train @ (p - y01)) / n + self.lambda_reg * (K_train @ self.alpha)
+            grad_alpha = (self.K_train @ (p - y01)) / n + self.lambda_reg * f_no_bias
             grad_b = (p - y01).mean()
             # update
             self.alpha -= self.eta * grad_alpha
             self.b -= self.eta * grad_b
             # update history
             loss = -np.mean(y01 * np.log(p + 1e-12) + (1 - y01) * np.log(1 - p + 1e-12))
-            loss += 0.5 * self.lambda_reg * (self.alpha @ K_train @ self.alpha)
+            loss += 0.5 * self.lambda_reg * (self.alpha @ self.K_train @ self.alpha)
             self.history_["log_loss"].append(float(loss))
             train_acc = (self.predict(X) == y).mean()
             self.history_["train_acc"].append(train_acc)
@@ -115,19 +114,19 @@ class KernelSVM:
             for start in range(0, n, self.batch_size):
                 batch_idx = perm[start:start + self.batch_size]
                 yb = y[batch_idx]
-                K_b_all = K_train[batch_idx, :]
+                K_b_all = self.K_train[batch_idx, :]
                 f_b = K_b_all @ (self.alpha * self.y_train) 
 
                 viol_mask = (yb * f_b) < 1.0
                 eta_t = 1.0 / (self.lambda_reg * t)
             # update violating alphas
                 if np.any(viol_mask):
-                    viol_idx = batch_idx[viol_mask]
-                    self.alpha[viol_idx] += eta_t / len(viol_idx)
-                    # project
-                    self.alpha = np.clip(self.alpha, 0, 1.0 / (self.lambda_reg * n))
+                    update = np.zeros_like(self.alpha)
+                    update[batch_idx[viol_mask]] = eta_t / np.sum(viol_mask)
+                    self.alpha += update
+                    np.clip(self.alpha, 0, 1.0 / (self.lambda_reg * n), out=self.alpha)
                 t += 1
-        # Compute alpha * y once
+        # Compute alpha * y 
             alpha_y = self.alpha * self.y_train
             K_full = K_train
             f_all = K_full @ alpha_y 
