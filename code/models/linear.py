@@ -28,6 +28,7 @@ class LinearSVM:
         self.b = 0.0
         t = 0
         idx = np.arange(n)
+        self.history_ = {"obj": [], "train_acc": [], "val_obj": [], "val_acc": []}
         for epoch in range(self.epochs):  
             if self.shuffle:
                 rng.shuffle(idx)
@@ -51,14 +52,15 @@ class LinearSVM:
                     # bias gets NO regularization
                     self.b += (eta / m) * yv.sum()
             # update history
-            self.history_["obj"].append(self._hingelosses(X, y))
+            train_obj = self._hingelosses(X, y)
             train_acc = (self.predict(X) == y).mean()
+            self.history_["obj"].append(train_obj)
             self.history_["train_acc"].append(train_acc)
             if X_val is not None and y_val is not None:
-                val_loss, val_acc = val_metrics(self, X_val, y_val, kind="linear")  
-                self.history_["val_loss"].append(val_loss)
+                val_obj = self._hingelosses(X_val, y_val)
+                val_acc = (self.predict(X_val) == y_val).mean()
+                self.history_["val_obj"].append(val_obj)
                 self.history_["val_acc"].append(val_acc)
-
 
         return self
     
@@ -101,6 +103,7 @@ class LogisticRegression:
         self.w = np.zeros(d, dtype=np.float64)
         self.b = 0.0
         idx = np.arange(n)
+        self.history_ = {"loss": [], "val_loss": [], "train_acc": [], "val_acc": []}
         for epoch in range(self.epochs):
             if self.shuffle:
                 rng.shuffle(idx)
@@ -117,11 +120,13 @@ class LogisticRegression:
                 self.w -= self.eta * grad_w
                 self.b -= self.eta * grad_b
             # update history
-            self.history_["loss"].append(self._loss(X, y))
+            train_loss = self._loss(X, y)
             train_acc = (self.predict(X) == y).mean()
+            self.history_["loss"].append(train_loss)
             self.history_["train_acc"].append(train_acc)
             if X_val is not None and y_val is not None:
-                val_loss, val_acc = val_metrics(self, X_val, y_val, kind="linear")  
+                val_loss = self._loss(X_val, y_val)
+                val_acc = (self.predict(X_val) == y_val).mean()
                 self.history_["val_loss"].append(val_loss)
                 self.history_["val_acc"].append(val_acc)
 

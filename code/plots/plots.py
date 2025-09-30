@@ -136,53 +136,77 @@ def plot_cv_results(results, model_name="Model", param_type="linear"):
         plt.tight_layout()
         plt.show()
 
-    elif param_type == "kernel":
-        lambdas = sorted(set(lam for lam, _ in results.keys()))
-        gammas  = sorted(set(gam for _, gam in results.keys()))
-        mean_matrix = np.zeros((len(lambdas), len(gammas)))
-        std_matrix  = np.zeros((len(lambdas), len(gammas)))
-        for i, lam in enumerate(lambdas):
-            for j, gam in enumerate(gammas):
-                mean_matrix[i, j] = results[(lam, gam)][0]
-                std_matrix[i, j]  = results[(lam, gam)][1]
-        # Plot mean CV accuracy heatmap
-        plt.figure(figsize=(8,6))
-        im = plt.imshow(mean_matrix, origin="lower",
-                        extent=(min(gammas), max(gammas), min(lambdas), max(lambdas)),
-                        aspect="auto", cmap="viridis")
-        plt.xscale("log")
-        plt.yscale("log")
-        plt.xlabel("Gamma (log scale)")
-        plt.ylabel("Lambda (log scale)")
-        plt.title(f"{model_name} Kernelized Cross-Validation (Mean Accuracy)")
-        plt.colorbar(im, label="Mean CV Accuracy")
+    elif key_len == 3:
+        # (lambda, gamma, degree) → one figure with subplots per degree
+        lambdas = sorted(set(lam for lam, _, _ in results.keys()))
+        gammas  = sorted(set(gam for _, gam, _ in results.keys()))
+        degrees = sorted(set(deg for _, _, deg in results.keys()))
 
-        # Highlight best hyperparameters
-        best_idx = np.unravel_index(np.argmax(mean_matrix), mean_matrix.shape)
-        best_lam = lambdas[best_idx[0]]
-        best_gam = gammas[best_idx[1]]
-        plt.scatter(best_gam, best_lam, color="white", marker="*", s=200, edgecolors="k", label="Best")
+        n_deg = len(degrees)
+        fig, axes = plt.subplots(1, n_deg, figsize=(6*n_deg,5), squeeze=False)
 
-        plt.legend()
+        for idx, deg in enumerate(degrees):
+            mean_matrix = np.zeros((len(lambdas), len(gammas)))
+            for i, lam in enumerate(lambdas):
+                for j, gam in enumerate(gammas):
+                    mean_matrix[i, j] = results[(lam, gam, deg)][0]
+
+            ax = axes[0, idx]
+            c = ax.imshow(mean_matrix, origin="lower", aspect="auto", cmap="viridis")
+            ax.set_yscale("log")
+            ax.set_xscale("log")
+            ax.set_xlabel("Gamma (log scale)")
+            ax.set_ylabel("Lambda (log scale)")
+            ax.set_title(f"Degree {deg}")
+
+        # annotate
+            for i in range(len(lambdas)):
+                for j in range(len(gammas)):
+                    ax.text(j, i, f"{mean_matrix[i,j]:.3f}", ha="center", va="center", color="white" if mean_matrix[i,j]<0.5 else "black", fontsize=8)
+
+        # highlight best
+            best_idx = np.unravel_index(np.argmax(mean_matrix), mean_matrix.shape)
+            ax.scatter(best_idx[1], best_idx[0], color="red", marker="*", s=200, edgecolors="k")
+
+        fig.colorbar(c, ax=axes.ravel().tolist(), label="Mean CV Accuracy")
         plt.tight_layout()
         plt.show()
 
-def radar_misclass(model, X_test, y_test, feature_names, model_name, color='b'):
-    y_pred = model.predict(X_test)
-    mis_idx = np.where(y_pred != y_test)[0]
-    if len(mis_idx) == 0:
-        print(f"No misclassifications for {model_name}")
+def radar_misclass(model, X_train, y_train, X_test, y_test, feature_names, model_name,
+                   train_color='green', test_color='red', alpha_fill=0.25, max_examples=None):
+
+    def avg_mis(X, y):
+        y_pred = model.predict(X)
+        mis_idx = np.where(y_pred != y)[0]
+        if len(mis_idx) == 0:
+            return None
+        if max_examples is not None:
+            mis_idx = mis_idx[:max_examples]
+        return np.mean(X[mis_idx], axis=0)
+
+    # Compute averages
+    train_avg = avg_mis(X_train, y_train)
+    test_avg = avg_mis(X_test, y_test)
+
+    if train_avg is None and test_avg is None:
+        print(f"No misclassifications for {model_name} in either set.")
         return
-    mis_features = X_test[mis_idx]
-    avg_features = np.mean(mis_features, axis=0)
-    # Radar setup
+
     labels = np.array(feature_names)
-    stats = np.concatenate((avg_features, [avg_features[0]])) 
     angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
     angles += angles[:1]
+
     fig, ax = plt.subplots(figsize=(6,6), subplot_kw=dict(polar=True))
-    ax.plot(angles, stats, 'o-', linewidth=2, label=f"{model_name}", color=color)
-    ax.fill(angles, stats, alpha=0.25)
+
+    if train_avg is not None:
+        train_stats = np.concatenate((train_avg, [train_avg[0]]))
+        ax.plot(angles, train_stats, 'o-', linewidth=2, label=f"{model_name} Train", color=train_color)
+        ax.fill(angles, train_stats, alpha=alpha_fill, color=train_color)
+
+    if test_avg is not None:
+        test_stats = np.concatenate((test_avg, [test_avg[0]]))
+        ax.plot(angles, test_stats, 'o--', linewidth=2, label=f"{model_name} Test", color=test_color)
+
     ax.set_thetagrids(np.degrees(angles[:-1]), labels)
     ax.set_title(f"Misclassified Feature Profile - {model_name}")
     ax.legend(loc="upper right")
