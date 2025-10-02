@@ -1,13 +1,14 @@
 import numpy as np
-from sklearn.model_selection import KFold, train_test_split
+from joblib import Parallel, delayed
+from sklearn.model_selection import StratifiedKFold, train_test_split
 from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix
 
 def cross_val_score(model_class, X, y, lambdas, k=5, **model_params):
     results = {}
-    kf = KFold(n_splits=k, shuffle=True, random_state=42)
+    kf = StratifiedKFold(n_splits=k, shuffle=True, random_state=42)
     for lam in lambdas:
         scores = []
-        for train_idx, val_idx in kf.split(X):
+        for train_idx, val_idx in kf.split(X, y):
             X_train, X_val = X[train_idx], X[val_idx]
             y_train, y_val = y[train_idx], y[val_idx]
 
@@ -18,12 +19,13 @@ def cross_val_score(model_class, X, y, lambdas, k=5, **model_params):
     best_lambda = max(results, key=results.get)
     return best_lambda, results
 
-def cross_val_score_kernel(model_class, X, y, lambdas, gammas, degrees=None, k=5, kind="gamma", **model_params):
+def cross_val_score_kernel(model_class, X, y, lambdas, gammas, degrees=None, k=5, kind="gamma", 
+                           patience=5, max_epochs=None, **model_params):
     from models.kernel import kernel
     results = {}
-    kf = KFold(n_splits=k, shuffle=True, random_state=42)
+    kf = StratifiedKFold(n_splits=k, shuffle=True, random_state=42)
 
-    # Determine degree iterations
+    # Degree iteration if polynomial kernel
     if kind == "poly":
         if degrees is None:
             raise ValueError("Degrees must be provided for polynomial kernel")
@@ -31,7 +33,7 @@ def cross_val_score_kernel(model_class, X, y, lambdas, gammas, degrees=None, k=5
     else:
         degree_iter = [None]
 
-    # Precompute kernels
+    # Precompute kernels for each (gamma, degree)
     precomputed_kernels = {}
     for gamma in gammas:
         for degree in degree_iter:
@@ -44,27 +46,36 @@ def cross_val_score_kernel(model_class, X, y, lambdas, gammas, degrees=None, k=5
         for degree in degree_iter:
             K_full = precomputed_kernels[(gamma, degree)]
             for lam in lambdas:
-                fold_scores = []
-                for train_idx, val_idx in kf.split(X):
+
+                def run_fold(train_idx, val_idx):
                     K_train = K_full[np.ix_(train_idx, train_idx)]
                     K_val   = K_full[np.ix_(val_idx, train_idx)]
-
                     model_kwargs = {
                         "lambda_reg": lam,
                         "gamma": gamma,
                         "kind": kind,
                         "degree": degree if kind == "poly" else None,
+                        "patience": patience,          # pass early stopping
                         **model_params
                     }
+                    if max_epochs is not None:
+                        model_kwargs["epochs"] = max_epochs  # override epochs if needed
 
                     model = model_class(**model_kwargs)
-                    model.fit(X[train_idx], y[train_idx], X_val=X[val_idx], y_val=y[val_idx], K_train=K_train)
-                    fold_scores.append(model.score(X[val_idx], y[val_idx]))
+                    model.fit(X[train_idx], y[train_idx],
+                              X_val=X[val_idx], y_val=y[val_idx],
+                              K_train=K_train)
+                    return model.score(X[val_idx], y[val_idx])
+
+                # run folds in parallel
+                fold_scores = Parallel(n_jobs=-1)(
+                    delayed(run_fold)(train_idx, val_idx)
+                    for train_idx, val_idx in kf.split(X, y)
+                )
 
                 scores = np.array(fold_scores, dtype=np.float64)
                 results[(lam, gamma, degree)] = (scores.mean(), scores.std())
 
-    
     best_params = max(results, key=lambda x: results[x][0])
     return best_params, results
     

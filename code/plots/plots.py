@@ -136,41 +136,50 @@ def plot_cv_results(results, model_name="Model", param_type="linear"):
         plt.tight_layout()
         plt.show()
 
-    elif key_len == 3:
-        # (lambda, gamma, degree) → one figure with subplots per degree
-        lambdas = sorted(set(lam for lam, _, _ in results.keys()))
-        gammas  = sorted(set(gam for _, gam, _ in results.keys()))
-        degrees = sorted(set(deg for _, _, deg in results.keys()))
+    else:
+        key_len = len(next(iter(results.keys())))
 
-        n_deg = len(degrees)
-        fig, axes = plt.subplots(1, n_deg, figsize=(6*n_deg,5), squeeze=False)
+        if key_len == 3:  # (lambda, gamma, degree)
+            lambdas = sorted(set(lam for lam, _, _ in results.keys()))
+            gammas  = sorted(set(gam for _, gam, _ in results.keys()))
+            degrees = sorted(set(deg for _, _, deg in results.keys()))
 
-        for idx, deg in enumerate(degrees):
-            mean_matrix = np.zeros((len(lambdas), len(gammas)))
-            for i, lam in enumerate(lambdas):
-                for j, gam in enumerate(gammas):
-                    mean_matrix[i, j] = results[(lam, gam, deg)][0]
+            n_deg = len(degrees)
+            fig, axes = plt.subplots(1, n_deg, figsize=(6*n_deg,5), squeeze=False)
 
-            ax = axes[0, idx]
-            c = ax.imshow(mean_matrix, origin="lower", aspect="auto", cmap="viridis")
-            ax.set_yscale("log")
-            ax.set_xscale("log")
-            ax.set_xlabel("Gamma (log scale)")
-            ax.set_ylabel("Lambda (log scale)")
-            ax.set_title(f"Degree {deg}")
+            for idx, deg in enumerate(degrees):
+                mean_matrix = np.zeros((len(lambdas), len(gammas)))
+                for i, lam in enumerate(lambdas):
+                    for j, gam in enumerate(gammas):
+                        mean_matrix[i, j] = results[(lam, gam, deg)][0]
 
-        # annotate
-            for i in range(len(lambdas)):
-                for j in range(len(gammas)):
-                    ax.text(j, i, f"{mean_matrix[i,j]:.3f}", ha="center", va="center", color="white" if mean_matrix[i,j]<0.5 else "black", fontsize=8)
+                ax = axes[0, idx]
+                c = ax.imshow(mean_matrix, origin="lower", aspect="auto", cmap="viridis")
 
-        # highlight best
-            best_idx = np.unravel_index(np.argmax(mean_matrix), mean_matrix.shape)
-            ax.scatter(best_idx[1], best_idx[0], color="red", marker="*", s=200, edgecolors="k")
+                ax.set_xticks(range(len(gammas)))
+                ax.set_xticklabels(gammas)
+                ax.set_yticks(range(len(lambdas)))
+                ax.set_yticklabels(lambdas)
 
-        fig.colorbar(c, ax=axes.ravel().tolist(), label="Mean CV Accuracy")
-        plt.tight_layout()
-        plt.show()
+                ax.set_xlabel("Gamma")
+                ax.set_ylabel("Lambda")
+                ax.set_title(f"Degree {deg}")
+
+                # annotate
+                for i in range(len(lambdas)):
+                    for j in range(len(gammas)):
+                        ax.text(j, i, f"{mean_matrix[i,j]:.3f}",
+                                ha="center", va="center",
+                                color="white" if mean_matrix[i,j]<0.5 else "black",
+                                fontsize=8)
+
+                # highlight best
+                best_idx = np.unravel_index(np.argmax(mean_matrix), mean_matrix.shape)
+                ax.scatter(best_idx[1], best_idx[0], color="red", marker="*", s=200, edgecolors="k")
+
+            fig.colorbar(c, ax=axes.ravel().tolist(), label="Mean CV Accuracy")
+            plt.tight_layout()
+            plt.show()
 
 def radar_misclass(model, X_train, y_train, X_test, y_test, feature_names, model_name,
                    train_color='green', test_color='red', alpha_fill=0.25, max_examples=None):

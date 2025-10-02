@@ -112,28 +112,28 @@ print(f"Linear Logistic Regression Test Accuracy: {lr_test_metrics['accuracy']:.
 best_params_gksvm, gksvm_results = cross_val_score_kernel(
     KernelSVM, features_train, target_train,
     lambdas=lambdas, gammas=gammas,
-    k=5, kind="gamma", epochs=100, batch_size=64
+    k=5, kind="gamma", epochs=100, batch_size=128
 )
 print(f"Best parameters Gaussian Kernel SVM: lambda={best_params_gksvm[0]}, gamma={best_params_gksvm[1]}")
 
 gksvm_model, gksvm_train_metrics, gksvm_test_metrics = train_and_evaluate(
     KernelSVM, features_train, target_train, features_test, target_test, 
     lambda_reg=best_params_gksvm[0], gamma=best_params_gksvm[1],
-    kind="gamma", epochs=100, batch_size=64
+    kind="gamma", epochs=100, batch_size=128
 )
 print(f"Gaussian Kernel SVM Test Accuracy: {gksvm_test_metrics['accuracy']:.4f}")
 
 # Gaussian Kernel Logistic Regression
 best_params_gklr, gklr_results = cross_val_score_kernel(
     KernelLogisticRegression, features_train, target_train, eta=0.1,
-    lambdas=lambdas, gammas=gammas, k=5, kind="gamma", epochs=150, batch_size=64
+    lambdas=lambdas, gammas=gammas, k=5, kind="gamma", epochs=150, batch_size=128
 )
 print(f"Best parameters Gaussian Kernel LR: lambda={best_params_gklr[0]}, gamma={best_params_gklr[1]}")
 
 gklr_model, gklr_train_metrics, gklr_test_metrics = train_and_evaluate(
     KernelLogisticRegression, features_train, target_train, features_test, target_test,
     lambda_reg=best_params_gklr[0], gamma=best_params_gklr[1],
-    eta=0.1, kind="gamma", epochs=50, batch_size=64
+    eta=0.1, kind="gamma", epochs=50, batch_size=128
 )
 print(f"Gaussian Kernel Logistic Regression Test Accuracy: {gklr_test_metrics['accuracy']:.4f}")
 
@@ -141,14 +141,14 @@ print(f"Gaussian Kernel Logistic Regression Test Accuracy: {gklr_test_metrics['a
 best_params_pksvm, pksvm_results = cross_val_score_kernel(
     KernelSVM, features_train, target_train,
     lambdas=lambdas, gammas=gammas, degrees=degrees,
-    k=5, kind="poly", epochs=100, batch_size=64
+    k=5, kind="poly", epochs=100, batch_size=128
 )
 print(f"Best parameters Polynomial Kernel SVM: lambda={best_params_pksvm[0]}, gamma={best_params_pksvm[1]}, degree={best_params_pksvm[2]}")
 
 pksvm_model, pksvm_train_metrics, pksvm_test_metrics = train_and_evaluate(
     KernelSVM, features_train, target_train, features_test, target_test,
     lambda_reg=best_params_pksvm[0], gamma=best_params_pksvm[1], degree=best_params_pksvm[2],
-    kind="poly", epochs=100, batch_size=64
+    kind="poly", epochs=100, batch_size=128
 )
 print(f"Polynomial Kernel SVM Test Accuracy: {pksvm_test_metrics['accuracy']:.4f}")
 
@@ -156,14 +156,14 @@ print(f"Polynomial Kernel SVM Test Accuracy: {pksvm_test_metrics['accuracy']:.4f
 best_params_pklr, pklr_results = cross_val_score_kernel(
     KernelLogisticRegression, features_train, target_train, eta=0.1,
     lambdas=lambdas, gammas=gammas, degrees=degrees,
-    k=5, kind="poly", epochs=100, batch_size=64
+    k=5, kind="poly", epochs=100, batch_size=128
 )
 print(f"Best parameters Polynomial Kernel LR: lambda={best_params_pklr[0]}, gamma={best_params_pklr[1]}, degree={best_params_pklr[2]}")
 
 pklr_model, pklr_train_metrics, pklr_test_metrics = train_and_evaluate(
     KernelLogisticRegression, features_train, target_train, features_test, target_test,
     lambda_reg=best_params_pklr[0], gamma=best_params_pklr[1], degree=best_params_pklr[2],
-    eta=0.1, kind="poly", epochs=50, batch_size=64
+    eta=0.1, kind="poly", epochs=50, batch_size=128
 )
 print(f"Polynomial Kernel Logistic Regression Test Accuracy: {pklr_test_metrics['accuracy']:.4f}")
 
@@ -176,13 +176,13 @@ models_metrics = {
     "Polynomial Kernel SVM": (pksvm_train_metrics, pksvm_test_metrics),
     "Polynomial Kernel Logistic Regression": (pklr_train_metrics, pklr_test_metrics)
 }
-plot_metrics(models_metrics)
-plot_confusion_matrices(models_metrics, class_labels=[1, -1])
-plot_training_curves(svm_model, lr_model)
-plot_ktraining_curves(gksvm_model, gklr_model)
-plot_ktraining_curves(pksvm_model, pklr_model)
-plot_cv_results(svm_results, model_name="Linear SVM", param_type="linear")
-plot_cv_results(lr_results, model_name="Linear Logistic Regression", param_type="linear")
+#plot_metrics(models_metrics)
+# plot_confusion_matrices(models_metrics, class_labels=[1, -1])
+# plot_training_curves(svm_model, lr_model)
+# plot_ktraining_curves(gksvm_model, gklr_model)
+# plot_ktraining_curves(pksvm_model, pklr_model)
+# plot_cv_results(svm_results, model_name="Linear SVM", param_type="linear")
+# plot_cv_results(lr_results, model_name="Linear Logistic Regression", param_type="linear")
 plot_cv_results(gksvm_results, model_name="Gaussian Kernel SVM", param_type="kernel")
 plot_cv_results(gklr_results, model_name="Gaussian Kernel Logistic Regression", param_type="kernel")
 plot_cv_results(pksvm_results, model_name="Polynomial Kernel SVM", param_type="kernel")
