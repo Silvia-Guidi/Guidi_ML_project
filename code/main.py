@@ -11,42 +11,42 @@ from plots.plots import plot_metrics, plot_confusion_matrices, plot_training_cur
 from ucimlrepo import fetch_ucirepo
 wine_quality = fetch_ucirepo(id=186)
 # variable information
-#print(wine_quality.variables)
-#print(wine_quality.metadata)
+print(wine_quality.variables)
+print(wine_quality.metadata)
 
 #data exploration
 df = pd.concat([wine_quality.data.features, wine_quality.data.targets], axis=1)
 print(df.isnull().sum())
 
-# fig, axes = plt.subplots(3, 4, figsize=(16, 10))
-# axes = axes.flatten()
-# for i, col in enumerate(df.columns):
-#     sns.histplot(df[col], kde=False, ax=axes[i], color="#2CEAA3")
-#     axes[i].set_title(f"Distribution of {col}", fontsize=12)
-# fig.suptitle("Distribution of the variables: histograms", fontsize=16)
-# plt.tight_layout()
-# plt.show()
-# plt.close()
+fig, axes = plt.subplots(3, 4, figsize=(16, 10))
+axes = axes.flatten()
+for i, col in enumerate(df.columns):
+    sns.histplot(df[col], kde=False, ax=axes[i], color="#2CEAA3")
+    axes[i].set_title(f"Distribution of {col}", fontsize=12)
+fig.suptitle("Distribution of the variables: histograms", fontsize=16)
+plt.tight_layout()
+plt.show()
+plt.close()
 
-# fig, axes = plt.subplots(3, 4, figsize=(16,10))  # 3 rows, 4 columns
-# axes = axes.flatten()
-# for i, col in enumerate(df.columns):
-#     axes[i].boxplot(df[col], patch_artist=True, boxprops=dict(facecolor="#2CEAA3"))
-#     axes[i].set_title(col)
-# fig.suptitle("Distribition of the variables: boxplots", fontsize=16)
-# plt.tight_layout()
-# plt.show()
-# plt.close()
+fig, axes = plt.subplots(3, 4, figsize=(16,10))  # 3 rows, 4 columns
+axes = axes.flatten()
+for i, col in enumerate(df.columns):
+    axes[i].boxplot(df[col], patch_artist=True, boxprops=dict(facecolor="#2CEAA3"))
+    axes[i].set_title(col)
+fig.suptitle("Distribition of the variables: boxplots", fontsize=16)
+plt.tight_layout()
+plt.show()
+plt.close()
 
-# print(df.describe())
-# print(df.corr())
+print(df.describe())
+print(df.corr())
 
 ##heatmap PLOT
-# plt.figure(figsize=(8,15))
-# sns.heatmap(df.corr(), annot=True, fmt=".2f", cmap="coolwarm", cbar=True)
-# plt.title("Correlation Heatmap", fontsize=16, pad=20)
-# plt.show()
-# plt.close()
+plt.figure(figsize=(8,15))
+sns.heatmap(df.corr(), annot=True, fmt=".2f", cmap="coolwarm", cbar=True)
+plt.title("Correlation Heatmap", fontsize=16, pad=20)
+plt.show()
+plt.close()
 
 #data preprocessing
 
@@ -63,15 +63,15 @@ std_train[std_train == 0] = 1
 features_train = (features_train - mean_train) / std_train
 features_test = (features_test - mean_train) / std_train
 
-# n_features = features_train.shape[1]
-# fig, axes = plt.subplots(1, n_features, figsize=(3*n_features, 5))
-# for i in range(n_features):
-#     axes[i].boxplot(features_train[:, i], patch_artist=True,
-#                     boxprops=dict(facecolor="#2CEAA3"))
-#     axes[i].set_title(feature_names[i], fontsize=7)
-# plt.tight_layout()
-# plt.show()
-# plt.close()
+n_features = features_train.shape[1]
+fig, axes = plt.subplots(1, n_features, figsize=(3*n_features, 5))
+for i in range(n_features):
+    axes[i].boxplot(features_train[:, i], patch_artist=True,
+                    boxprops=dict(facecolor="#2CEAA3"))
+    axes[i].set_title(feature_names[i], fontsize=7)
+plt.tight_layout()
+plt.show()
+plt.close()
 print(target_train.min())
 print(target_train.max())
 print(np.isnan(features_train).any())
@@ -176,13 +176,13 @@ models_metrics = {
     "Polynomial Kernel SVM": (pksvm_train_metrics, pksvm_test_metrics),
     "Polynomial Kernel Logistic Regression": (pklr_train_metrics, pklr_test_metrics)
 }
-#plot_metrics(models_metrics)
-# plot_confusion_matrices(models_metrics, class_labels=[1, -1])
-# plot_training_curves(svm_model, lr_model)
-# plot_ktraining_curves(gksvm_model, gklr_model)
-# plot_ktraining_curves(pksvm_model, pklr_model)
-# plot_cv_results(svm_results, model_name="Linear SVM", param_type="linear")
-# plot_cv_results(lr_results, model_name="Linear Logistic Regression", param_type="linear")
+plot_metrics(models_metrics)
+plot_confusion_matrices(models_metrics, class_labels=[1, -1])
+plot_training_curves(svm_model, lr_model)
+plot_ktraining_curves(gksvm_model, gklr_model)
+plot_ktraining_curves(pksvm_model, pklr_model)
+plot_cv_results(svm_results, model_name="Linear SVM", param_type="linear")
+plot_cv_results(lr_results, model_name="Linear Logistic Regression", param_type="linear")
 plot_cv_results(gksvm_results, model_name="Gaussian Kernel SVM", param_type="kernel")
 plot_cv_results(gklr_results, model_name="Gaussian Kernel Logistic Regression", param_type="kernel")
 plot_cv_results(pksvm_results, model_name="Polynomial Kernel SVM", param_type="kernel")

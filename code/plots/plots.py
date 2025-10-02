@@ -147,12 +147,15 @@ def plot_cv_results(results, model_name="Model", param_type="linear"):
             n_deg = len(degrees)
             fig, axes = plt.subplots(1, n_deg, figsize=(6*n_deg,5), squeeze=False)
 
-            for idx, deg in enumerate(degrees):
+            mean_matrices = []
+            for deg in degrees:
                 mean_matrix = np.zeros((len(lambdas), len(gammas)))
                 for i, lam in enumerate(lambdas):
                     for j, gam in enumerate(gammas):
                         mean_matrix[i, j] = results[(lam, gam, deg)][0]
+                mean_matrices.append(mean_matrix)
 
+            for idx, (deg, mean_matrix) in enumerate(zip(degrees, mean_matrices)):
                 ax = axes[0, idx]
                 c = ax.imshow(mean_matrix, origin="lower", aspect="auto", cmap="viridis")
 
@@ -163,9 +166,8 @@ def plot_cv_results(results, model_name="Model", param_type="linear"):
 
                 ax.set_xlabel("Gamma")
                 ax.set_ylabel("Lambda")
-                ax.set_title(f"Degree {deg}")
+                ax.set_title(f"{model_name} - Degree {deg}")
 
-                # annotate
                 for i in range(len(lambdas)):
                     for j in range(len(gammas)):
                         ax.text(j, i, f"{mean_matrix[i,j]:.3f}",
@@ -173,12 +175,15 @@ def plot_cv_results(results, model_name="Model", param_type="linear"):
                                 color="white" if mean_matrix[i,j]<0.5 else "black",
                                 fontsize=8)
 
-                # highlight best
                 best_idx = np.unravel_index(np.argmax(mean_matrix), mean_matrix.shape)
                 ax.scatter(best_idx[1], best_idx[0], color="red", marker="*", s=200, edgecolors="k")
 
-            fig.colorbar(c, ax=axes.ravel().tolist(), label="Mean CV Accuracy")
-            plt.tight_layout()
+            # horizontal colorbar below all subplots
+            fig.subplots_adjust(bottom=0.2, wspace=0.4)
+            cbar_ax = fig.add_axes([0.15, 0.08, 0.7, 0.03])  # [left, bottom, width, height]
+            fig.colorbar(c, cax=cbar_ax, orientation='horizontal', label="Mean CV Accuracy")
+
+            plt.tight_layout(rect=[0, 0.1, 1, 1])
             plt.show()
 
 def radar_misclass(model, X_train, y_train, X_test, y_test, feature_names, model_name,
