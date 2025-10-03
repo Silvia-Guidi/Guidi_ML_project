@@ -32,16 +32,18 @@ The dataset comprises of 6497 observations and 12 numerical variables.
 Each variable measures a different component of wine: fixed and volatile acidity, citric acid, residual sugar, chlorides, both free and total sulfur dioxide, density, the ph, sulphates, and alcohol.
 All these represent the features that will be used to classify each observation, while the target variable used will be 'quality'.
 
-A first look reveals that the distribution of the variables is overall skewed, as figure 1 depicts.
-Most of the observations tend to be on the lowest values of the range and around the mean, with the exception of 'total sulfur dioxide', 'ph', 'alcohol' and 'quality', which tend to be slightly more centered and spread.
+A first exploration of the dataset pictured in figure 1 shows that most variables display skewed distributions, often concentrated toward lower values with long right tails.
+For instance, residual sugar and sulfur dioxide have several extreme values, suggesting the presence of outliers.
+Variables such as pH and alcohol are more symmetrically distributed and centered, which makes them more comparable across samples.
+The quality variable itself is not uniformly spread: most wines are rated around the mid-range, with relatively few cases of very low or very high quality.
 
 ```{r fig-hist, fig.cap="Distribution of variables represented using histograms", echo=FALSE, fig.pos='H'}
 knitr::include_graphics("histograms.png")
 ```
 
 Figure 2 gives another perspective on the distributions considered.
-Here it is possible to better see how observations tend to be around the mean in most cases, with the four exceptions highlighted before.
-Moreover, it is evident that in all variables there are potential outliers, which explains why in figure 1 most graphs are shifted on the left and not centered.
+The boxplots highlight the same tendency: several features exhibit outliers extending far beyond the interquartile range, confirming the asymmetry observed in the histograms.
+Nevertheless, these points were retained rather than removed, since they represent real chemical variations that could be informative for classification.
 
 ```{r fig-box, fig.cap="Distribution of variables represented using boxplots", echo=FALSE, fig.pos='H'}
 knitr::include_graphics("Boxplot.png")
@@ -53,7 +55,7 @@ There are two relations that stand out for their high value: 0.72 for free and t
 These two results can be justified using qualitative reasoning: in the first case the variables share the same object measured - sulfur dioxide; in the second case, chemically, ethanol (the element of alcohol) has a lower density compared to the water components of the wine, thus the negative relation.
 Focusing on the target, all the relations are negative and not strong, with the exception of 'alcohol' which has positive sign and medium strength.
 
-```{r fig-corr, fig.cap="Heathmap of the correlations between variables", echo=FALSE, fig.pos='H'}
+```{r fig-corr, fig.cap="Heat map of the correlations between variables", echo=FALSE, fig.pos='H'}
 knitr::include_graphics("corr.png")
 ```
 
@@ -117,7 +119,7 @@ This allows logistic regression to provide calibrated confidence scores in addit
 The stochastic gradient for a minibatch is computed as: $$\nabla_w=-\frac{1}{m}\sum^m_{i=1}y_ix_i\sigma(-y_if(x_i))+\lambda w, \quad \nabla_b=-\frac{1}{m}\sum^m_{i=1}y_i\sigma(-y_if(x_i))$$where $f(x)=w^\top x+b$.
 The weights and bias are then updated with learning rate $\eta$: $w\leftarrow w-\eta\nabla_w$ and $b\leftarrow b-\eta\nabla_b$.
 The training process tracks the logistic regularization at the end of each epoch.
-Predictions are obtained by thresholding the decision function: $$\hat y=\begin{cases} 1&\text{if }f(x)\geq0,\\-1&\text{otherwise}\end{cases}$$Thus, logistic regression closely mirrors the SVM procedure, but leverages a probabilistic fundation and outputs interpretable confidence scores through the sigmoind function.
+Predictions are obtained by thresholding the decision function: $$\hat y=\begin{cases} 1&\text{if }f(x)\geq0,\\-1&\text{otherwise}\end{cases}$$Thus, logistic regression closely mirrors the SVM procedure, but leverages a probabilistic fundation and outputs interpretable confidence scores through the sigmoid function.
 
 ## Kernel methods
 
@@ -180,123 +182,64 @@ This tuning procedure in implemented in the cross_val_score and cross_val_score_
 
 # Results
 
+Prior to the detailed examination of performance metrics, confusion matrices, and learning dynamics, it is useful to highlight the general trends observed across models.
+Linear approaches (SVM and logistic regression) deliver stable but moderate performance, reflecting their limited representational capacity and a tendency to underfit.
+Gaussian kernel models exhibit markedly different behaviors: the SVM attains near-perfect accuracy on the training set but generalizes poorly, whereas logistic regression yields smoother, less complex decision boundaries, resulting in only marginal improvements over the linear baseline.
+Polynomial kernels produce mixed outcomes: the SVM achieves a favorable balance between flexibility and stability, while logistic regression is characterized by unstable convergence and biased predictions.
+
 ## Models performance
 
 Figure 5 reports the evaluation metrics (accuracy, precision, recall, and F1-score) for all models, comparing training and test results.
-The linear models (SVM and logistic regression) show very similar and consistent performance.
-The small gap between training and test indicates that they generalize well and are not overfitting, but the moderate values across all metrics suggest they may be underfitting, as they do not fully capture the complexity of the data.
-Kernel methods show more varied behaviors.
-The Gaussian kernel SVM reaches almost perfect performance on the training set but drops sharply on the test set, especially in accuracy and F1-score.
-This is a clear sign of overfitting, where the model learns the training data too well but fails to generalize.
-The Gaussian kernel logistic regression, however, performs similarly to the linear models and does not show such overfitting, which suggests it makes only limited use of the kernel’s expressive power.
-Polynomial kernels behave differently: the SVM with polynomial kernel achieves stable and reasonable results across both sets, while the logistic regression with polynomial kernel gives very unbalanced outcomes.
-In particular, it has low accuracy and precision but perfect recall, meaning it tends to classify nearly all samples as positive, which increases recall but at the cost of many false positives.
-
-In summary, these results illustrate a spectrum of behaviors: linear models are stable but risk underfitting, the Gaussian kernel SVM is powerful but strongly overfits, and the polynomial kernel logistic regression shows poor balance across metrics.
-The next section on training convergence will further clarify these tendencies, while the following analysis of confusion matrices will provide a more detailed view of the types of errors each model makes.
+The linear models, namely SVM and logistic regression, perform very similarly, displaying consistent outcomes across both datasets.
+In contrast, kernel-based approaches produce more heterogeneous results. The Gaussian kernel SVM, for instance, reaches almost perfect accuracy on the training set but suffers a sharp decline on the test set, particularly in accuracy and F1-score, pointing to its difficulty in maintaining generalization. The Gaussian kernel logistic regression behaves differently: despite relying on the same kernel transformation, it performs much like the linear models, suggesting that the probabilistic formulation constrains its flexibility and limits overfitting. Polynomial kernels, on the other hand, lead to less uniform patterns. The polynomial SVM delivers stable and reasonable performance across training and test, whereas the polynomial logistic regression exhibits highly unbalanced behavior, with low accuracy and precision but perfect recall. This reflects a strong bias toward predicting the majority class as positive, which maximizes recall at the expense of a large number of false positives.
 
 ```{r fig-metrics, fig.cap="Representation and comaprison of resulting train and test metrics of linear and kernel svm and logistic regression", echo=FALSE, out.width='90%', fig.pos='H'}
 knitr::include_graphics("metrics.png")
 ```
 
-The confusion matrices in Figure 6 help clarify how the different models handle the two classes.
-The linear models (SVM and logistic regression) show a consistent pattern: they classify the positive class much better than the negative one.
-This is partly explained by the imbalance in the target variable, with positives being more frequent.
-Since linear models build a single straight decision boundary, they tend to favor the majority class, which makes them reliable but somewhat limited.
-This reflects the earlier point about underfitting: they generalize well but do not fully capture the structure of the data.
-The Gaussian kernel SVM behaves differently.
-By mapping the data into a richer feature space, it can almost perfectly separate the classes in training.
-However, this expressive power comes at a cost: the model overfits, and on the test set its accuracy for the negative class drops sharply.
-The Gaussian kernel logistic regression shows a more conservative behavior.
-Although it uses the same kernel, its probabilistic formulation regularizes the decision surface, leading to more balanced but overall weaker results.
-The polynomial kernel SVM finds a middle ground: its performance remains stable across training and test, with decent recognition of both classes, which suggests a better trade-off between bias and variance.
-Finally, the polynomial kernel logistic regression collapses into a trivial solution, predicting almost everything as positive.
-This is linked to its design: logistic regression optimizes class probabilities, and under the effect of the data imbalance and a high-dimensional polynomial expansion, it tends toward the majority class, leading to perfect recall but almost no ability to detect negatives.
-
-```{r fig-confusion, fig.cap="Fonfusion matrices of the four models with percentages per row", echo=FALSE, out.width='90%', fig.pos='H'}
+The confusion matrices in Figure 6 provide additional insight into how the different models handle class imbalance. For the linear SVM and logistic regression, the same tendency emerges: both are more successful at identifying positive cases than negatives. This asymmetry can be partly explained by the distribution of the target variable, where positives are more frequent. Since linear models construct a single separating hyperplane, they naturally favor the majority class, leading to reliable but limited discrimination power. The Gaussian kernel SVM departs from this pattern: by projecting the data into a richer feature space, it is able to almost perfectly separate the classes in the training set. However, this expressiveness is not fully beneficial, as the improvement in training accuracy does not translate to the test set. By contrast, the Gaussian kernel logistic regression exhibits a more conservative profile. While still relying on nonlinear mappings, the probabilistic formulation acts as a regularizer, producing smoother decision boundaries that achieve more balanced, though overall weaker, results. Among polynomial models, the SVM again represents an intermediate case, maintaining stability across training and test and providing a fair recognition of both classes. The polynomial logistic regression, however, collapses into a trivial solution: it predicts nearly all instances as positive, a consequence of the imbalance combined with the high-dimensional feature expansion. The result is perfect recall but almost no ability to detect negative cases.
+```{r fig-confusion, fig.cap="Confusion matrices of the four models with percentages per row", echo=FALSE, out.width='90%', fig.pos='H'}
 knitr::include_graphics("conf.png")
 ```
 
 ## Training dynamics
 
-Figure 7 shows the evolution of training and validation loss and accuracy for the linear models.
-Both the Support Vector Machine (SVM) and logistic regression display similar behaviour, with training and validation curves remaining close to each other throughout the epochs.
-This pattern confirms what was observed in the evaluation metrics (Figure 5): the linear models generalize well and do not overfit, as indicated by the small gap between training and test performance.
-At the same time, the moderate values across all metrics, together with the limited improvement in accuracy seen in the learning curves, suggest a certain degree of underfitting.
-In other words, while these models are stable and consistent, they do not fully capture the complexity of the data.
+Figure 7 illustrates the evolution of training and validation loss and accuracy for the linear models. Both SVM and logistic regression show similar behavior, with training and validation curves remaining closely aligned across epochs. This confirms that these models generalize well and do not overfit, consistent with the small gap observed in the evaluation metrics. At the same time, moderate metric values and limited improvement in accuracy suggest some degree of underfitting, indicating that while these models are stable, they do not fully capture data complexity.
 
 ```{r fig-linearconv, fig.cap="Comparison of training and validation loss (left) and accuracy (right) for linear SVM and Logistic Regression over 50 epochs.", echo=FALSE, fig.show='hold', out.width='90%', fig.pos='H'}
 knitr::include_graphics("lincov.png")
 ```
 
-Figure 8 reports the training dynamics for the Gaussian kernel models, highlighting a contrast in learning behavior compared to the linear models.
-The Gaussian kernel SVM exhibits rapid early improvement but reaches early stopping at epoch 5.
-Training accuracy climbs above 0.95 while validation accuracy stabilizes around 0.8, with the training loss remaining well below the validation loss.
-The slight upward drift and plateauing of both loss and accuracy curves indicate that the model has learned the training data extremely well but struggles to generalize, confirming the overfitting observed in the evaluation metrics (Figure 5).
-
-In comparison, the Gaussian kernel logistic regression demonstrates more stable and balanced training.
-Both training and validation losses decrease steadily and remain very close throughout the epochs, while accuracy rises smoothly from around 0.65 to a plateau between 0.7 and 0.75.
-The small gap between curves suggests that the model generalizes reasonably well without overfitting.
-Nevertheless, the moderate final accuracy indicates a certain degree of underfitting, showing that the kernel’s expressive power is not fully exploited, similar to what was observed for the linear models.
+Training dynamics for the Gaussian kernel models (Figure 8) reveal a stark contrast. The Gaussian kernel SVM quickly reaches high training accuracy, exceeding 0.95 within the first few epochs, while validation accuracy plateaus around 0.8. The gap between training and validation loss indicates that the model fits the training data extremely well but struggles to generalize, consistent with overfitting. Conversely, the Gaussian kernel logistic regression exhibits smoother learning: training and validation losses decrease steadily, remaining close throughout, with accuracy rising to a moderate plateau between 0.7 and 0.75. This pattern indicates reasonable generalization without overfitting, though moderate accuracy reflects some underfitting.
 
 ```{r fig-gkconv, fig.cap="Comparison of training and validation loss (left) and accuracy (right) for Gaussian Kernel SVM and Logistic Regression over 50 epochs.", echo=FALSE, fig.show='hold', out.width='90%', fig.pos='H'}
 knitr::include_graphics("kergconv.png")
 ```
 
-Figure 9 illustrates the training and validation dynamics for the polynomial kernel models, which display markedly different behaviors for SVM and logistic regression.
-The SVM with polynomial kernel shows smooth and stable learning: training and validation losses decrease steadily and stabilize, while accuracy rises and levels off for both sets.
-This indicates that the model generalizes well, balancing the ability to fit the training data while capturing meaningful patterns in the data.
-
-In contrast, the logistic regression with polynomial kernel exhibits highly unstable behavior.
-Both losses and accuracies fluctuate repeatedly during training, with ups and downs occurring simultaneously for training and validation.
-This erratic pattern suggests that the model struggles to converge and cannot reliably learn the structure of the data.
-The instability in the curves, coupled with the moderate performance, indicates underfitting and highlights the model’s limited ability to exploit the kernel’s expressive power.
+Polynomial kernel models display distinct behaviors for SVM and logistic regression (Figure 9). The polynomial SVM learns steadily, with both losses and accuracies stabilizing across training and validation, suggesting good generalization and reliable performance. The polynomial logistic regression, however, exhibits erratic fluctuations in loss and accuracy, indicating difficulty in convergence. The oscillatory patterns highlight the model’s limited capacity to exploit the kernel’s expressive power and suggest underfitting.
 
 ```{r fig-pkconv, fig.cap="Comparison of training and validation loss (left) and accuracy (right) for Polynomial Kernel SVM and Logistic Regression over 8 epochs.", echo=FALSE, fig.show='hold', out.width='90%', fig.pos='H'}
 knitr::include_graphics("kerpconv.png")
 ```
 
-In summary, the training dynamics corroborate the patterns observed in the evaluation metrics.
-Linear models remain stable throughout training, with close alignment between training and validation curves, reflecting good generalization but a tendency toward underfitting.
-The Gaussian kernel SVM, in contrast, achieves near-perfect training performance while validation lags behind, highlighting clear overfitting.
-The Gaussian kernel logistic regression maintains stable and balanced learning, similar to the linear models, but does not fully exploit the kernel’s capacity.
-Polynomial kernels display contrasting behaviors: the SVM shows steady and reliable learning with consistent performance across training and validation, while the logistic regression exhibits highly unstable and oscillatory curves, indicating underfitting and poor convergence.
-Overall, these results illustrate a spectrum of model behaviors, from stable but limited linear models to highly expressive but overfitting Gaussian kernels and inconsistent polynomial kernel logistic regression.
-The following section on cross-validation and hyperparameter analysis will further explore how tuning model parameters influences these training dynamics and generalization patterns.
 
 ## Cross-Validation and Hyperparameter Analysis
 
-The cross-validation analysis highlights different behaviors for the two linear models (Figure 10).
-For the SVM, validation accuracy shows a bell-shaped curve, peaking at $\lambda = 10^{-2}$.
-This reflects the sensitivity of the margin-based formulation: excessive regularization reduces the ability to fit the data, while too little leads to overfitting.
-The confusion matrix confirms this behavior, with slightly better recognition of the positive class than the negative.
-Logistic regression, by contrast, selects the minimal $\lambda = 10^{-4}$, with accuracy remaining flat for small values and decreasing only under stronger regularization.
-This explains its stable performance across training and test and the same asymmetry in the confusion matrix.
-Overall, the SVM demonstrates a clear trade-off between bias and variance, efficiently capturing patterns without overfitting, whereas logistic regression is more robust to small regularization but slightly underfits, particularly on the minority class.
+Cross-validation reveals important differences in how the models respond to hyperparameter tuning. For the linear models (Figure 10), the SVM achieves its highest validation accuracy at a regularization parameter of $\lambda = 10^{-2}$. Accuracy decreases for both stronger and weaker regularization, forming a characteristic bell-shaped curve. This pattern reflects the role of $\lambda$: higher regularization overly constrains the margin, reducing the model’s ability to fit the data, while too little regularization allows excessive flexibility, increasing variance and risk of overfitting. Logistic regression, by contrast, achieves its best performance at the minimal tested regularization $\lambda = 10^{-4}$, with validation accuracy remaining relatively stable for small $\lambda$ and declining only under stronger regularization. This indicates that logistic regression benefits from almost unregularized fitting, allowing it to capture patterns in the data while remaining robust to overfitting due to its linear, probabilistic formulation.
 
-```{r fig-linearcv, fig.cap=" Cross-validation curves for the linear models: SVM (left), logistic regression (right)", echo=FALSE, fig.show='hold', out.width='49%', fig.pos='H'}
+```{r fig-linearcv, fig.cap="Cross-validation curves for the linear models: SVM (left), logistic regression (right)", echo=FALSE, fig.show='hold', out.width='49%', fig.pos='H'}
 knitr::include_graphics("lsvmcv.png")
 knitr::include_graphics("llrcv.png")
 ```
 
-The Gaussian kernel highlights distinct behaviors for the two models (Figure 11).
-For the SVM, the optimal parameters are $\gamma = 1.5848$ and $\lambda = 10^{-4}$, achieving a peak mean accuracy of 0.788.
-The high accuracy at low $\lambda$ combined with sensitivity to both $\gamma$ and $\lambda$ suggests overfitting: the model captures complex patterns but may not generalize well beyond the training set.
-Logistic regression reaches its best performance at $\gamma = 0.23$ and $\lambda = 10^{-4}$, with mean accuracy around 0.74.
-Unlike the SVM, it underfits for most other parameter combinations, indicating limited ability to exploit the kernel’s nonlinear transformations.
-Overall, the SVM is more sensitive to parameter changes and can overfit the data, while logistic regression is steadier but less flexible, trading some accuracy for stability.
+Gaussian kernel models display more pronounced differences (Figure 11). For the Gaussian SVM, the optimal parameters are $\gamma = 1.5848$ and $\lambda = 10^{-4}$, which yield a peak mean accuracy of 0.788. Other combinations of $\gamma$ and $\lambda$ produce lower accuracy, confirming that this pair represents the best trade-off between flexibility and regularization. The interpretation is consistent with the meaning of the parameters: larger $\gamma$ increases the influence of individual training points, which can lead to overfitting if not controlled by sufficient regularization. Indeed, higher $\lambda$ would reduce training accuracy by penalizing large weights and smoothing the decision boundary, while lower $\lambda$ allows near-perfect training fit but worsens test performance. Gaussian kernel logistic regression reaches its best mean accuracy of 0.74 at $\gamma = 0.23$ and $\lambda = 10^{-4}$. Across other parameter combinations, accuracy is consistently lower, showing that the model is less sensitive to the kernel’s nonlinearity and relies on moderate $\gamma$ to balance flexibility and stability.
 
 ```{r fig-gkcv, fig.cap="Cross-validation mean accuracy for Gaussian kernel SVM and logistic regression across different gammas and lambda values.", echo=FALSE, fig.show='hold', out.width='49%', fig.pos='H'}
 knitr::include_graphics("gksvmcv.png")
 knitr::include_graphics("gklrcv.png")
 ```
 
-For polynomial kernels, SVM and logistic regression show markedly different behavior(Figure 12).
-The SVM reaches its peak performance at degree 4 with $\gamma = 0.0398$ and $\lambda = 0.0001$ (mean accuracy 0.756), and at degree 5 with $\gamma = 0.0398$ and $\lambda = 0.0004$ (0.753).
-These results indicate that the SVM can effectively capture complex nonlinear patterns, but its high sensitivity to gamma and lambda suggests a risk of overfitting if parameters are not carefully tuned.
-Logistic regression, in contrast, achieves its best performance only at very low gamma and lambda ($\gamma = 0.006$, $\lambda = 0.0001$, mean accuracy 0.633) for both degrees, with most other parameter combinations leading to underfitting.
-This highlights the limited flexibility of logistic regression under polynomial transformations: it remains stable but cannot fully exploit the kernel’s expressive power.
-Overall, SVM demonstrates strong adaptability with moderate overfitting risk, while logistic regression prioritizes stability at the cost of lower accuracy.
+Polynomial kernels further illustrate these contrasting behaviors (Figure 12). The polynomial SVM achieves maximum performance at degree $d=5$ with $\gamma = 0.0398$ and $\lambda = 0.0001$, yielding a mean accuracy of 0.756, and similarly at degree 5 with slightly higher $\lambda = 0.0004$ (0.753). The graphs show that moderate degree, intermediate $\gamma$, and light regularization allow the SVM to capture nonlinear patterns effectively, while increasing the degree or $\gamma$ too much generally reduces accuracy, as the model becomes overly flexible and sensitive to individual training points. On the other hand, polynomial logistic regression reaches its best performance only at very low $\gamma = 0.006$ and $\lambda = 0.0001$, with a mean accuracy of 0.633, and performs worse for higher degrees. The increase in degree does not benefit logistic regression because, unlike SVM, it cannot exploit the additional complexity; higher degree amplifies instability in class probability estimation, especially when combined with stronger $\gamma$ or low regularization. Across all other parameter combinations, logistic regression remains underfitted, demonstrating that it is sensitive to degree, $\gamma$, and $\lambda$, but cannot leverage the polynomial kernel as effectively as the SVM.
 
 ```{r fig-pkcv, fig.cap="Cross-validation mean accuracy for Polynomial kernel SVM and logistic regression across different gammas and lambda values.", echo=FALSE, fig.show='hold', out.width='49%', fig.pos='H'}
 knitr::include_graphics("pksvmcv.png")
@@ -305,12 +248,9 @@ knitr::include_graphics("pklrcv.png")
 
 ## Misclassified Example Analysis
 
-The analysis of misclassified observations highlights systematic differences between models (Figure 13).
-For most models, including linear SVM, linear logistic regression, Gaussian kernel logistic regression, and polynomial kernel models, misclassifications tend to occur in samples with low alcohol content and high density, while pH, citric acid, and residual sugar remain close to the average.
-Other features show only small deviations, and the profiles of misclassified observations are very similar between training and test sets, suggesting that these errors are consistent and reflect mild underfitting rather than overfitting.
-In contrast, the Gaussian kernel SVM exhibits a very different behavior: several features deviate more strongly, and the profiles of training and test misclassifications differ noticeably.
-This mirrors the observations from the metrics and cross-validation, where the Gaussian SVM achieved nearly perfect training performance but a substantial drop on the test set, and the confusion matrix showed lower accuracy for the minority class.
-Overall, while most models display consistent and interpretable error patterns, the Gaussian kernel SVM is highly sensitive to specific combinations of feature values, producing sharp misclassification profiles on training and broader, shifted profiles on test data, confirming its tendency to overfit.
+The analysis of misclassified observations reveals systematic differences among models (Figure 13). Most approaches, including linear SVM and logistic regression, Gaussian kernel logistic regression, and polynomial kernel variants, misclassify wines with low alcohol content and high density, while features such as pH, citric acid, and residual sugar remain close to average. This pattern suggests that errors occur primarily in borderline cases where chemical properties provide weaker signals, and the similarity of misclassification profiles between training and test sets indicates structural rather than random errors.
+
+The Gaussian kernel SVM, in contrast, exhibits markedly different patterns. Multiple features deviate strongly from the average, and misclassification profiles differ substantially between training and test sets. These discrepancies reflect overfitting: the model memorizes irregularities in the training data, producing sharply defined misclassification profiles for training but broader and shifted profiles in test data. Overall, while most models show stable and interpretable error patterns, the Gaussian kernel SVM is highly sensitive to specific feature combinations and demonstrates poor generalization.
 
 ```{r fig-miss, fig.cap="Radar plots of the average profiles of misclassified observations for training and test sets across all models", echo=FALSE, fig.show='hold', out.width='40%', fig.pos='H'}
 knitr::include_graphics("misslinsvm.png")
@@ -320,6 +260,18 @@ knitr::include_graphics("missgklr.png")
 knitr::include_graphics("misspksvm.png")
 knitr::include_graphics("misspklr.png")
 ```
+
+## Generalization Analysis
+
+Across models, generalization behavior reflects the interplay between model flexibility, regularization, and data complexity. Linear models (SVM and logistic regression) maintain stable but moderate metrics (Figure 5) across training and test sets, with a small gap between them. Their validation curves (Figure 7) show closely aligned training and validation loss and accuracy, indicating good generalization but limited capacity to capture nonlinear patterns. Regularization parameters for both models are low-to-moderate ($\lambda$ selected via cross-validation, Figure 10), helping prevent overfitting, though the resulting performance reflects mild underfitting, particularly for the minority class as seen in the confusion matrices (Figure 6).
+
+Gaussian kernel models reveal a stronger contrast. The SVM attains near-perfect training metrics (Figure 5) but drops substantially on test data, particularly for minority-class accuracy, highlighting overfitting. Cross-validation identifies optimal parameters at moderate $\gamma$ and very low $\lambda$ (Figure 11), which maximize training fit but amplify sensitivity to training noise. Training curves (Figure 8) plateau quickly, with low training loss but higher validation loss, confirming memorization of training patterns. In contrast, Gaussian kernel logistic regression achieves moderate metrics comparable to linear models, with training and validation curves closely aligned and limited sensitivity to $\gamma$ and $\lambda$, reflecting stable learning with only mild underfitting.
+
+Polynomial kernel models further illustrate the importance of parameter tuning. The SVM performs best at degree 4–5 with moderate $\gamma$ and light $\lambda$ (Figure 12), showing balanced training and test metrics (Figure 5) and smooth, stable convergence (Figure 9). Increasing degree or $\gamma$ generally reduces test accuracy, as the model becomes overly flexible and sensitive to individual points. Logistic regression with polynomial kernels achieves highest metrics only at very low degree, $\gamma$, and $\lambda$, with most other parameter combinations producing underfitting, erratic learning curves, and poor class balance (Figures 5 and 9).
+
+The analysis of misclassified observations (Figure 13) complements these findings. Linear models, Gaussian kernel logistic regression, and polynomial kernel SVM show stable and consistent misclassification patterns, concentrated near borderline cases, indicative of underfitting. The Gaussian kernel SVM, however, exhibits sharply different profiles between training and test sets, reflecting overfitting and heightened sensitivity to specific feature combinations.
+
+Overall, these results illustrate a spectrum of generalization behaviors: linear models generalize stably but underfit, Gaussian kernel SVM overfits, Gaussian kernel logistic regression balances stability and flexibility, and polynomial kernels reveal nuanced interactions between kernel complexity, regularization, and model capacity.
 
 # Conclusion
 
